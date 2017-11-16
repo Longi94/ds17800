@@ -1,0 +1,6 @@
+rootProject.name = 'ds17800'
+
+include 'das-core'
+include 'das-client'
+include 'das-server'
+

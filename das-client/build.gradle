@@ -1,0 +1,12 @@
+group 'nl.vu.ds17800'
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+sourceCompatibility = 1.8
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile project(":das-core")
+}

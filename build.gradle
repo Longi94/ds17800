@@ -1,0 +1,15 @@
+allprojects {
+    group 'nl.vu.ds17800'
+    version '1.0.0-SNAPSHOT'
+
+    buildscript {
+        repositories {
+            mavenCentral()
+        }
+    }
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+}
