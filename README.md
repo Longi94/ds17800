@@ -21,3 +21,5 @@
 * Clients have the middleware IP.
 * Server handles action delays. On client.
 * TCP
+
+![arch](https://i.imgur.com/NWXFBIf.jpg)
