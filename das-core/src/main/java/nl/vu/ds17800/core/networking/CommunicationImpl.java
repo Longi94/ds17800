@@ -8,6 +8,8 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by hacku on 11/21/17.
@@ -28,7 +30,7 @@ public class CommunicationImpl implements Communication {
         return (Message)oin.readObject();
     }
 
-    public String getServer(){
+    public List<Map<String, Object>> getServers(){
         return null;
     }
 

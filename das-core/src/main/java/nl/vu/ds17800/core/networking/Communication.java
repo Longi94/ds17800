@@ -3,6 +3,8 @@ package nl.vu.ds17800.core.networking;
 import nl.vu.ds17800.core.networking.response.Message;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by hacku on 11/21/17.
@@ -12,14 +14,15 @@ public interface Communication {
 
     /**
      *
-     * @return ip address of master node, asked from middleware
+     * @return list of master nodes, asked from middleware
      */
-    public String getServer();
+    public List<Map<String, Object>> getServers();
 
     /**
      * Tries to be registered as new master node
      * @return
      */
+
     public boolean registerServer();
     public void init();
 }
