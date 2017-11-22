@@ -1,5 +1,7 @@
 package nl.vu.ds17800.core.networking;
 
+import nl.vu.ds17800.core.networking.response.Message;
+
 /**
  * interface describing regular behaviour of object which will be used
  * as a set of callbacks for handling incoming messages from other nodes

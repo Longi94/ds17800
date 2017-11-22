@@ -1,4 +1,4 @@
-package nl.vu.ds17800.core.networking;
+package nl.vu.ds17800.core.networking.response;
 
 import java.io.Serializable;
 
