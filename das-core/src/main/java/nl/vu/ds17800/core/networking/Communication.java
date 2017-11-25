@@ -12,17 +12,23 @@ import java.util.Map;
 public interface Communication {
     public Message sendMessage(Message message, String inetAddress) throws IOException, ClassNotFoundException;
 
-    /**
+    /** For Clients
      *
      * @return list of master nodes, asked from middleware
      */
     public List<Map<String, Object>> getServers();
 
-    /**
+    /** For Servers
      * Tries to be registered as new master node
      * @return
      */
-
     public boolean registerServer();
+
+    /** For Servers
+     * Deregister Server
+     * @return
+     */
+    public void deregisterServer();
+
     public void init();
 }

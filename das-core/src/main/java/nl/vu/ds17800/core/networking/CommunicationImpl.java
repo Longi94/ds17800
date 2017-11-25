@@ -59,6 +59,11 @@ public class CommunicationImpl implements Communication {
         return false;
     }
 
+    @Override
+    public void deregisterServer() {
+        
+    }
+
     public void init(){
         NetworkRouter routerThread = new NetworkRouter(incomeHandler);
         routerThread.start();
