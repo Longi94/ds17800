@@ -22,11 +22,9 @@ public class CommunicationImpl implements Communication {
     static private final int DSPORT = 666;
     static private final String HEARTBEATING = "heartbeating";
     private IncomingHandler incomeHandler;
-    private LinkedList<MessageContainer> incomeBuffer;
     private HashMap<String, Socket> socketPool;
 
     public CommunicationImpl(IncomingHandler handler){
-        incomeBuffer = new LinkedList<MessageContainer>();
         incomeHandler = handler;
         socketPool = new HashMap<String, Socket>();
     }
@@ -62,16 +60,15 @@ public class CommunicationImpl implements Communication {
     }
 
     public void init(){
-        NetworkRouter routerThread = new NetworkRouter(incomeBuffer);
-        Worker worker = new Worker(incomeHandler, incomeBuffer);
+        NetworkRouter routerThread = new NetworkRouter(incomeHandler);
         routerThread.start();
-        worker.start();
     }
 
     private class NetworkRouter extends Thread{
-        private LinkedList<MessageContainer> messagesBuffer;
-        public NetworkRouter(LinkedList<MessageContainer> list){
-            this.messagesBuffer = list;
+        private IncomingHandler messageHandler;
+        public NetworkRouter(IncomingHandler incomingHandler){
+            super();
+            messageHandler = incomingHandler;
         }
 
         public void run(){
@@ -80,55 +77,42 @@ public class CommunicationImpl implements Communication {
                 ssocket = new ServerSocket(DSPORT);
                 while(true){
                     Socket socket = ssocket.accept();
-                    ObjectInputStream oin = new ObjectInputStream(socket.getInputStream());
-                    Message message = (Message) oin.readObject();
-                    if(message.get("type").toString() == HEARTBEATING)
-                        continue;
-                    MessageContainer mContainer = new MessageContainer();
-                    mContainer.socket = socket;
-                    mContainer.message = message;
-                    synchronized (messagesBuffer){
-                        this.messagesBuffer.add(mContainer);
-                        this.messagesBuffer.notifyAll();
-                    }
+                    socketPool.put(socket.getInetAddress().toString(), socket);
+                    Worker worker = new Worker(messageHandler, socket);
+                    worker.start();
                 }
             } catch (IOException e) {
-            } catch (ClassNotFoundException e) {
             }
         }
     }
 
     private class Worker extends Thread{
         private IncomingHandler messageshandler;
-        private LinkedList<MessageContainer> messagesBuffer;
+        private Socket connection;
 
-        Worker(IncomingHandler handler, LinkedList<MessageContainer> list){
-            this.messagesBuffer = list;
+        Worker(IncomingHandler handler, Socket socket){
             messageshandler = handler;
+            connection = socket;
         }
 
         public void run(){
+            ObjectInputStream oin = null;
+            ObjectOutputStream oout = null;
+            try {
+                oin = new ObjectInputStream(connection.getInputStream());
+                oout = new ObjectOutputStream(connection.getOutputStream());
+            } catch (IOException e) {
+             return;
+            }
             while(true){
-                MessageContainer mContainer = null;
-                try{
-                    synchronized (messagesBuffer){
-                        while(mContainer == null){
-                            mContainer = messagesBuffer.getFirst();
-                            messagesBuffer.wait();
-                        }
-                        messagesBuffer.removeFirst();
-                    }
-                    ObjectOutputStream oout = new ObjectOutputStream(mContainer.socket.getOutputStream());
-                    oout.writeObject(messageshandler.handleMessage(mContainer.message));
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    continue;
+                try {
+                    Message message = (Message)oin.readObject();
+                    oout.writeObject(messageshandler.handleMessage(message));
                 } catch (IOException e) {
                     e.printStackTrace();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
                 }
-
-
             }
         }
     }
