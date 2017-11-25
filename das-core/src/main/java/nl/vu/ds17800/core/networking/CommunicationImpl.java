@@ -37,7 +37,7 @@ public class CommunicationImpl implements Communication {
         if(socket == null)
             socket = new Socket(InetAddress.getByName(inetAddress), DSPORT);
         Message testMessage = new Message();
-        testMessage.type = HEARTBEATING;
+        testMessage.put("type", HEARTBEATING);
         ObjectOutputStream oout = new ObjectOutputStream(socket.getOutputStream());
         ObjectInputStream oin = new ObjectInputStream(socket.getInputStream());
         try{
@@ -82,7 +82,7 @@ public class CommunicationImpl implements Communication {
                     Socket socket = ssocket.accept();
                     ObjectInputStream oin = new ObjectInputStream(socket.getInputStream());
                     Message message = (Message) oin.readObject();
-                    if(message.type == HEARTBEATING)
+                    if(message.get("type").toString() == HEARTBEATING)
                         continue;
                     MessageContainer mContainer = new MessageContainer();
                     mContainer.socket = socket;

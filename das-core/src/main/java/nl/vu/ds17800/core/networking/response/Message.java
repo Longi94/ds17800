@@ -5,10 +5,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Objects;
 
-public class Message extends HashMap<String, Objects> implements Serializable {
+public class Message extends HashMap<String, Object> implements Serializable {
     public Message() {
         super();
 
-        this.set("timestamp", (Long)(new Date).getTime());
+        this.put("timestamp", System.currentTimeMillis());
     }
 }
