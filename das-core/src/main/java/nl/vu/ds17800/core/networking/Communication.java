@@ -10,25 +10,31 @@ import java.util.Map;
  * Created by hacku on 11/21/17.
  */
 public interface Communication {
-    public Message sendMessage(Message message, String inetAddress) throws IOException, ClassNotFoundException;
+    public static Message sendMessage(Message message, String inetAddress) throws IOException, ClassNotFoundException{
+        return null;
+    };
 
     /** For Clients
      *
      * @return list of master nodes, asked from middleware
      */
-    public List<Map<String, Object>> getServers();
+    public static List<Map<String, Object>> getServers(){
+        return null;
+    };
 
     /** For Servers
      * Tries to be registered as new master node
      * @return
      */
-    public boolean registerServer();
+    static public boolean registerServer(){
+        return false;
+    };
 
     /** For Servers
      * Deregister Server
      * @return
      */
-    public void deregisterServer();
+    static public void deregisterServer(){};
 
-    public void init();
+    static public void init(){};
 }
