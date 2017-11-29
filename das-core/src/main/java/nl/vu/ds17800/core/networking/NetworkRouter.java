@@ -8,8 +8,8 @@ import java.util.Map;
 public class NetworkRouter extends Thread{
     static private final int DSPORT = 666;
     private IncomingHandler messageHandler;
-    private Map<String, Socket> socketPool;
-    public NetworkRouter(IncomingHandler incomingHandler, Map<String, Socket> sockets){
+    private Map<String, PoolEntity> socketPool;
+    public NetworkRouter(IncomingHandler incomingHandler, Map<String, PoolEntity> sockets){
         super();
         socketPool = sockets;
         messageHandler = incomingHandler;
@@ -21,7 +21,9 @@ public class NetworkRouter extends Thread{
             ssocket = new ServerSocket(DSPORT);
             while(true){
                 Socket socket = ssocket.accept();
-                socketPool.put(socket.getInetAddress().toString(), socket);
+                PoolEntity entity = new PoolEntity();
+                entity.socket = socket;
+                socketPool.put(socket.getInetAddress().toString(), entity);
                 Worker worker = new Worker(messageHandler, socket);
                 worker.start();
             }

@@ -27,27 +27,41 @@ public class CommunicationImpl implements Communication {
     static private final String BOOTSTRAPURL = "http://165.227.133.190:8140";
     static private final String HEARTBEATING = "heartbeating";
     static private IncomingHandler incomeHandler;
-    static private HashMap<String, Socket> socketPool;
+    static private HashMap<String, PoolEntity> socketPool;
 
-    static public Message sendMessage(Message message, String inetAddress) throws IOException, ClassNotFoundException {
-        Socket socket;
-        socket = socketPool.get(inetAddress);
-        if(socket == null)
-            socket = new Socket(InetAddress.getByName(inetAddress), DSPORT);
-        Message testMessage = new Message();
-        testMessage.put("type", HEARTBEATING);
-        ObjectOutputStream oout = new ObjectOutputStream(socket.getOutputStream());
-        ObjectInputStream oin = new ObjectInputStream(socket.getInputStream());
-        try{
-            oout.writeObject(testMessage);
-        } catch (IOException e){
-            socket = new Socket(InetAddress.getByName(inetAddress), DSPORT);
-            oout = new ObjectOutputStream(socket.getOutputStream());
-            oin = new ObjectInputStream(socket.getInputStream());
+    static public Message sendMessage(Message message, String inetAddress) throws IOException, ClassNotFoundException, InterruptedException {
+        PoolEntity entity;
+        ObjectOutputStream oout = null;
+        ObjectInputStream oin = null;
+        entity = socketPool.get(inetAddress);
+        if(entity == null){
+            entity = new PoolEntity();
+            entity.socket = new Socket(InetAddress.getByName(inetAddress), DSPORT);
+            oout = new ObjectOutputStream(entity.socket.getOutputStream());
+            oin = new ObjectInputStream(entity.socket.getInputStream());
+        } else {
+            Message testMessage = new Message();
+            testMessage.put("type", HEARTBEATING);
+            oout = new ObjectOutputStream(entity.socket.getOutputStream());
+            oin = new ObjectInputStream(entity.socket.getInputStream());
+            try{
+                oout.writeObject(testMessage);
+            } catch (IOException e){
+                entity.socket = new Socket(InetAddress.getByName(inetAddress), DSPORT);
+                oout = new ObjectOutputStream(entity.socket.getOutputStream());
+                oin = new ObjectInputStream(entity.socket.getInputStream());
+            }
         }
-        socketPool.put(inetAddress, socket);
-        oout.writeObject(message);
-        return (Message)oin.readObject();
+        socketPool.put(inetAddress, entity);
+        message.put("__communicationType", "__request");
+        synchronized(entity.responseBuffer){
+            oout.writeObject(message);
+            while(entity.responseBuffer.size() == 0)
+                entity.responseBuffer.wait();
+        }
+        message = entity.responseBuffer.get(0);
+        entity.responseBuffer.remove(message);
+        return message;
     }
 
     static public List<Map<String, Object>> getServers(){
@@ -80,10 +94,15 @@ public class CommunicationImpl implements Communication {
         
     }
 
-    static public void init(IncomingHandler handler){
+    static public void initServer(IncomingHandler handler){
         incomeHandler = handler;
-        socketPool = new HashMap<String, Socket>();
+        socketPool = new HashMap<String, PoolEntity>();
         NetworkRouter routerThread = new NetworkRouter(incomeHandler, socketPool);
         routerThread.start();
+    }
+
+    static public void initClient(IncomingHandler handler){
+        incomeHandler = handler;
+        socketPool = new HashMap<String, PoolEntity>();
     }
 }

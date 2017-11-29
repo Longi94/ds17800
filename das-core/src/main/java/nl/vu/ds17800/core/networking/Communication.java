@@ -10,7 +10,7 @@ import java.util.Map;
  * Created by hacku on 11/21/17.
  */
 public interface Communication {
-    public static Message sendMessage(Message message, String inetAddress) throws IOException, ClassNotFoundException{
+    public static Message sendMessage(Message message, String inetAddress) throws IOException, ClassNotFoundException, InterruptedException{
         return null;
     };
 
@@ -35,6 +35,4 @@ public interface Communication {
      * @return
      */
     static public void deregisterServer(){};
-
-    static public void init(){};
 }
