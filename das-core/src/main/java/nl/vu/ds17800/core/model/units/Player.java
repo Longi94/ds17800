@@ -58,4 +58,21 @@ public class Player extends Unit {
                 return false;
         }
     }
+
+    @Override
+    public boolean check(Action action) {
+        Unit unit;
+        switch (action.getType()) {
+            case PLAYER_ATTACK:
+                unit = battleField.getUnit(action.getX(), action.getY());
+                return unit != null && unit.getType() == UnitType.DRAGON;
+            case PLAYER_HEAL:
+                unit = battleField.getUnit(action.getX(), action.getY());
+                return unit != null && unit.getType() == UnitType.PLAYER;
+            case PLAYER_MOVE:
+                return battleField.getUnit(action.getX(), action.getY()) == null;
+            default:
+                return false;
+        }
+    }
 }

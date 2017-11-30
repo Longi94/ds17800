@@ -52,4 +52,15 @@ public class Dragon extends Unit {
                 return false;
         }
     }
+
+    @Override
+    public boolean check(Action action) {
+        switch (action.getType()) {
+            case DRAGON_ATTACK:
+                Unit unit = battleField.getUnit(action.getX(), action.getY());
+                return unit != null && unit.getType() == UnitType.PLAYER;
+            default:
+                return false;
+        }
+    }
 }

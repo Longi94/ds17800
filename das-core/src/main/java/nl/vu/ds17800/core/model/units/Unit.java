@@ -43,6 +43,14 @@ public abstract class Unit implements Serializable {
     public abstract boolean apply(Action action);
 
     /**
+     * Check if the action is valid or not.
+     *
+     * @param action the action to be checked
+     * @return valid
+     */
+    public abstract boolean check(Action action);
+
+    /**
      * Create a new unit and specify the
      * number of hitpoints. Units hitpoints
      * are initialized to the maxHitPoints.
