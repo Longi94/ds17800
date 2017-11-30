@@ -8,7 +8,6 @@ import java.net.Socket;
 import java.util.Map;
 
 public class NetworkRouter extends Thread{
-    static private final int DSPORT = 666;
     private IncomingHandler messageHandler;
     private Map<String, PoolEntity> socketPool;
     private Server serverDescriptor;
@@ -21,6 +20,7 @@ public class NetworkRouter extends Thread{
     }
 
     public void run(){
+        int DSPORT = serverDescriptor.serverPort;
         ServerSocket ssocket = null;
         try {
             ssocket = new ServerSocket(DSPORT);

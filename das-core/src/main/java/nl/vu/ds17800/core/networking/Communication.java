@@ -4,6 +4,7 @@ import nl.vu.ds17800.core.networking.response.Message;
 import nl.vu.ds17800.core.networking.response.Server;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 
@@ -11,9 +12,7 @@ import java.util.Map;
  * Created by hacku on 11/21/17.
  */
 public interface Communication {
-    public static Message sendMessage(Message message, String inetAddress) throws IOException, ClassNotFoundException, InterruptedException{
-        return null;
-    };
+    public Message sendMessage(Message message, Server dest) throws IOException, ClassNotFoundException, InterruptedException, NoSuchAlgorithmException;
 
     /** For Clients
      *

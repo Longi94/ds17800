@@ -20,6 +20,7 @@ public class Worker extends Thread{
     public void run(){
         ObjectInputStream oin = null;
         ObjectOutputStream oout = null;
+        System.out.println("Started listening port" + connectionEntity.socket.getInetAddress() + " on port " + connectionEntity.socket.getPort());
         try {
             oin = new ObjectInputStream(connectionEntity.socket.getInputStream());
             oout = new ObjectOutputStream(connectionEntity.socket.getOutputStream());
@@ -32,15 +33,16 @@ public class Worker extends Thread{
                 if(message.get("__communicationType") == HEARTBEATING)
                     continue;
 
-
-                if(message.get("__communicationType").equals("_response")){
+                if(message.get("__communicationType").equals("__response")){
                     synchronized (connectionEntity.responseBuffer){
                         connectionEntity.responseBuffer.add(message);
                         connectionEntity.responseBuffer.notifyAll();
                     }
                     continue;
                 }
+                String messageKey = message.get("__communicationKey").toString();
                 message = messageshandler.handleMessage(message);
+                message.put("__communicationKey", messageKey);
                 message.put("__communicationType", "__response");
                 oout.writeObject(message);
             } catch (IOException e) {

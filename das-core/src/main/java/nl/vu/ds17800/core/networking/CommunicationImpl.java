@@ -11,11 +11,14 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +33,7 @@ public class CommunicationImpl implements Communication {
     private IncomingHandler incomeHandler;
     private Map<String, PoolEntity> socketPool;
 
-    public Message sendMessage(Message message, Server dest) throws IOException, ClassNotFoundException, InterruptedException {
+    public Message sendMessage(Message message, Server dest) throws IOException, ClassNotFoundException, InterruptedException, NoSuchAlgorithmException {
         String inetAddress = dest.ipaddr;
         int DSPORT = dest.serverPort;
         PoolEntity entity;
@@ -40,29 +43,45 @@ public class CommunicationImpl implements Communication {
         if(entity == null){
             entity = new PoolEntity();
             entity.socket = new Socket(InetAddress.getByName(inetAddress), DSPORT);
+            socketPool.put(inetAddress, entity);
             oout = new ObjectOutputStream(entity.socket.getOutputStream());
-            oin = new ObjectInputStream(entity.socket.getInputStream());
+            Worker worker = new Worker(incomeHandler, entity);
+            worker.start();
         } else {
             Message testMessage = new Message();
             testMessage.put("__communicationType", HEARTBEATING);
             oout = new ObjectOutputStream(entity.socket.getOutputStream());
-            oin = new ObjectInputStream(entity.socket.getInputStream());
             try{
                 oout.writeObject(testMessage);
             } catch (IOException e){
-                entity.socket = new Socket(InetAddress.getByName(inetAddress), DSPORT);
+                entity = new PoolEntity();
+                entity.socket = new Socket(dest.ipaddr, DSPORT);
+                socketPool.put(inetAddress, entity);
+                Worker worker = new Worker(incomeHandler, entity);
+                worker.start();
                 oout = new ObjectOutputStream(entity.socket.getOutputStream());
-                oin = new ObjectInputStream(entity.socket.getInputStream());
             }
         }
         socketPool.put(inetAddress, entity);
         message.put("__communicationType", "__request");
+        KeyGenerator keyGen;
+        keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(256); // for example
+        SecretKey secretKey = keyGen.generateKey();
+        String keyString = secretKey.getEncoded().toString();
+        message.put("__communicationKey", keyString);
         synchronized(entity.responseBuffer){
             oout.writeObject(message);
-            while(entity.responseBuffer.size() == 0)
+            waiting_for_response:
+            while(true){
                 entity.responseBuffer.wait();
+                for(Message message_i : entity.responseBuffer)
+                    if(message_i.get("__communicationKey").equals(keyString)) {
+                        message = message_i;
+                        break waiting_for_response;
+                    }
+            }
         }
-        message = entity.responseBuffer.get(0);
         entity.responseBuffer.remove(message);
         return message;
     }
