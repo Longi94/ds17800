@@ -7,12 +7,5 @@ package nl.vu.ds17800.core.model;
  * @author Pieter Anemaet, Boaz Pat-El
  */
 public enum MessageRequest {
-    SPAWN_UNIT,
-    GET_UNIT,
-    MOVE_UNIT,
-    PUT_UNIT,
-    REMOVE_UNIT,
-    GET_TYPE,
-    DEAL_DAMAGE,
-    HEAL_DAMAGE
+    spawnUnit, moveUnit, putUnit, removeUnit, dealDamage, healDamage,
 }

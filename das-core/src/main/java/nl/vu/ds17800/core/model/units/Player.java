@@ -1,6 +1,5 @@
 package nl.vu.ds17800.core.model.units;
 
-import nl.vu.ds17800.core.model.Action;
 import nl.vu.ds17800.core.model.BattleField;
 
 /**
@@ -32,47 +31,5 @@ public class Player extends Unit {
     @Override
     public UnitType getType() {
         return UnitType.PLAYER;
-    }
-
-    @Override
-    public boolean apply(Action action) {
-        Unit unit;
-        switch (action.getType()) {
-            case PLAYER_ATTACK:
-                unit = battleField.getUnit(action.getX(), action.getY());
-                if (unit != null && unit.getType() == UnitType.DRAGON) {
-                    adjustHitPoints(action.getHitPoints());
-                    return true;
-                }
-                return false;
-            case PLAYER_HEAL:
-                unit = battleField.getUnit(action.getX(), action.getY());
-                if (unit != null && unit.getType() == UnitType.PLAYER) {
-                    adjustHitPoints(action.getHitPoints());
-                    return true;
-                }
-                return false;
-            case PLAYER_MOVE:
-                return battleField.moveUnit(this, action.getX(), action.getY());
-            default:
-                return false;
-        }
-    }
-
-    @Override
-    public boolean check(Action action) {
-        Unit unit;
-        switch (action.getType()) {
-            case PLAYER_ATTACK:
-                unit = battleField.getUnit(action.getX(), action.getY());
-                return unit != null && unit.getType() == UnitType.DRAGON;
-            case PLAYER_HEAL:
-                unit = battleField.getUnit(action.getX(), action.getY());
-                return unit != null && unit.getType() == UnitType.PLAYER;
-            case PLAYER_MOVE:
-                return battleField.getUnit(action.getX(), action.getY()) == null;
-            default:
-                return false;
-        }
     }
 }

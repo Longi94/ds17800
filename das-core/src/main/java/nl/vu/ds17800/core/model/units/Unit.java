@@ -1,6 +1,5 @@
 package nl.vu.ds17800.core.model.units;
 
-import nl.vu.ds17800.core.model.Action;
 import nl.vu.ds17800.core.model.BattleField;
 
 import java.io.Serializable;
@@ -33,22 +32,6 @@ public abstract class Unit implements Serializable {
     public enum UnitType {
         PLAYER, DRAGON, UNDEFINED
     }
-
-    /**
-     * Apply an action to a unit.
-     *
-     * @param action action to be applied
-     * @return whether the action was successfully applied or not
-     */
-    public abstract boolean apply(Action action);
-
-    /**
-     * Check if the action is valid or not.
-     *
-     * @param action the action to be checked
-     * @return valid
-     */
-    public abstract boolean check(Action action);
 
     /**
      * Create a new unit and specify the

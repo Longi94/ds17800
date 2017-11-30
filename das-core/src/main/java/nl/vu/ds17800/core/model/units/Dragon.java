@@ -1,6 +1,5 @@
 package nl.vu.ds17800.core.model.units;
 
-import nl.vu.ds17800.core.model.Action;
 import nl.vu.ds17800.core.model.BattleField;
 
 /**
@@ -36,31 +35,5 @@ public class Dragon extends Unit {
     @Override
     public UnitType getType() {
         return UnitType.DRAGON;
-    }
-
-    @Override
-    public boolean apply(Action action) {
-        switch (action.getType()) {
-            case DRAGON_ATTACK:
-                Unit unit = battleField.getUnit(action.getX(), action.getY());
-                if (unit != null && unit.getType() == UnitType.PLAYER) {
-                    adjustHitPoints(action.getHitPoints());
-                    return true;
-                }
-                return false;
-            default:
-                return false;
-        }
-    }
-
-    @Override
-    public boolean check(Action action) {
-        switch (action.getType()) {
-            case DRAGON_ATTACK:
-                Unit unit = battleField.getUnit(action.getX(), action.getY());
-                return unit != null && unit.getType() == UnitType.PLAYER;
-            default:
-                return false;
-        }
     }
 }

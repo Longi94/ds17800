@@ -5,6 +5,7 @@ import nl.vu.ds17800.core.model.units.Unit;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The actual battlefield where the fighting takes place.
@@ -164,6 +165,86 @@ public class BattleField implements Serializable {
      */
     public int getNewUnitID() {
         return ++lastUnitID;
+    }
+
+    /**
+     * Apply an action to the game.
+     *
+     * @param action action
+     */
+    public void apply(Map<String, Object> action) {
+        MessageRequest request = (MessageRequest) action.get("request");
+        Unit unit;
+        switch (request) {
+            case spawnUnit:
+                spawnUnit((Unit) action.get("unit"), (Integer) action.get("x"), (Integer) action.get("y"));
+                break;
+            case putUnit:
+                putUnit((Unit) action.get("unit"), (Integer) action.get("x"), (Integer) action.get("y"));
+                break;
+            case dealDamage: {
+                int x = (Integer) action.get("x");
+                int y = (Integer) action.get("y");
+                unit = getUnit(x, y);
+                if (unit != null) {
+                    unit.adjustHitPoints(-(Integer) action.get("damage"));
+                }
+            }
+            case healDamage: {
+                int x = (Integer) action.get("x");
+                int y = (Integer) action.get("y");
+                unit = getUnit(x, y);
+                if (unit != null) {
+                    unit.adjustHitPoints((Integer) action.get("healed"));
+                }
+                break;
+            }
+            case moveUnit:
+                moveUnit((Unit) action.get("unit"), (Integer) action.get("x"), (Integer) action.get("y"));
+                break;
+            case removeUnit:
+                removeUnit((Integer) action.get("x"), (Integer) action.get("y"));
+                break;
+        }
+    }
+
+    /**
+     * Check if the action is valid or not.
+     *
+     * @param action action
+     * @return valid
+     */
+    public boolean check(Map<String, Object> action) {
+        MessageRequest request = (MessageRequest) action.get("request");
+        Unit unit;
+        switch (request) {
+            case spawnUnit:
+                return map[(Integer) action.get("x")][(Integer) action.get("y")] != null;
+            case putUnit:
+                return map[(Integer) action.get("x")][(Integer) action.get("y")] != null;
+            case dealDamage: {
+                int x = (Integer) action.get("x");
+                int y = (Integer) action.get("y");
+                return getUnit(x, y) != null;
+            }
+            case healDamage: {
+                int x = (Integer) action.get("x");
+                int y = (Integer) action.get("y");
+                return getUnit(x, y) != null;
+            }
+            case moveUnit:
+                int newX = (Integer) action.get("x");
+                int newY = (Integer) action.get("y");
+                unit = (Unit) action.get("unit");
+
+                return unit.getHitPoints() > 0 && newX >= 0 && newX < BattleField.MAP_WIDTH && newY >= 0 &&
+                        newY < BattleField.MAP_HEIGHT && map[newX][newY] == null;
+
+            case removeUnit:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /**
