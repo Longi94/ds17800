@@ -1,6 +1,7 @@
 package nl.vu.ds17800.core.networking;
 
 import nl.vu.ds17800.core.networking.response.Message;
+import nl.vu.ds17800.core.networking.response.Server;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,7 +19,7 @@ public interface Communication {
      *
      * @return list of master nodes, asked from middleware
      */
-    public static List<Map<String, Object>> getServers(){
+    public static List<Server> getServers(){
         return null;
     };
 
@@ -26,13 +27,11 @@ public interface Communication {
      * Tries to be registered as new master node
      * @return
      */
-    static public boolean registerServer(){
-        return false;
-    };
+    public boolean registerServer();
 
     /** For Servers
      * Deregister Server
      * @return
      */
-    static public void deregisterServer(){};
+    public void deregisterServer();
 }

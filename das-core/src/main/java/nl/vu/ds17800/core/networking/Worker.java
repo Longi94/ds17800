@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public class Worker extends Thread{
+    private final String    HEARTBEATING = "heartbeating";
     private IncomingHandler messageshandler;
     private PoolEntity connectionEntity;
 
@@ -28,20 +29,24 @@ public class Worker extends Thread{
         while(true){
             try {
                 Message message = (Message)oin.readObject();
-                synchronized (connectionEntity.responseBuffer){
-                    if(message.get("__communicationType").equals("_response")){
+                if(message.get("__communicationType") == HEARTBEATING)
+                    continue;
+
+
+                if(message.get("__communicationType").equals("_response")){
+                    synchronized (connectionEntity.responseBuffer){
                         connectionEntity.responseBuffer.add(message);
                         connectionEntity.responseBuffer.notifyAll();
-                        continue;
                     }
+                    continue;
                 }
                 message = messageshandler.handleMessage(message);
                 message.put("__communicationType", "__response");
                 oout.writeObject(message);
             } catch (IOException e) {
-                e.printStackTrace();
+                return;
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                return;
             }
         }
     }

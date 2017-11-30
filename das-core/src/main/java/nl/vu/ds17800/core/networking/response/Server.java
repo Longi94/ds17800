@@ -8,5 +8,5 @@ import java.io.Serializable;
 public class Server implements Serializable{
     public int rank; //  id of node described by the object
     public String ipaddr; // no comments :)
-
+    public int serverPort;
 }

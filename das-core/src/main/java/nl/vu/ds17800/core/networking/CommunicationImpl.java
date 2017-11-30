@@ -1,6 +1,7 @@
 package nl.vu.ds17800.core.networking;
 
 import nl.vu.ds17800.core.networking.response.Message;
+import nl.vu.ds17800.core.networking.response.Server;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -15,21 +16,23 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by hacku on 11/21/17.
  */
 public class CommunicationImpl implements Communication {
-    static private final int DSPORT = 666;
-    static private final String BOOTSTRAPURL = "http://165.227.133.190:8140";
-    static private final String HEARTBEATING = "heartbeating";
-    static private IncomingHandler incomeHandler;
-    static private HashMap<String, PoolEntity> socketPool;
+    private final String    HEARTBEATING = "heartbeating";
+    private IncomingHandler incomeHandler;
+    private Map<String, PoolEntity> socketPool;
 
-    static public Message sendMessage(Message message, String inetAddress) throws IOException, ClassNotFoundException, InterruptedException {
+    public Message sendMessage(Message message, Server dest) throws IOException, ClassNotFoundException, InterruptedException {
+        String inetAddress = dest.ipaddr;
+        int DSPORT = dest.serverPort;
         PoolEntity entity;
         ObjectOutputStream oout = null;
         ObjectInputStream oin = null;
@@ -41,7 +44,7 @@ public class CommunicationImpl implements Communication {
             oin = new ObjectInputStream(entity.socket.getInputStream());
         } else {
             Message testMessage = new Message();
-            testMessage.put("type", HEARTBEATING);
+            testMessage.put("__communicationType", HEARTBEATING);
             oout = new ObjectOutputStream(entity.socket.getOutputStream());
             oin = new ObjectInputStream(entity.socket.getInputStream());
             try{
@@ -64,25 +67,8 @@ public class CommunicationImpl implements Communication {
         return message;
     }
 
-    static public List<Map<String, Object>> getServers(){
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        HttpGet get = new HttpGet(BOOTSTRAPURL + "/servers");
-        HttpResponse response;
-        try{
-            response = httpclient.execute(get);
-            //System.out.println(EntityUtils.toString(response.getEntity()));
-            JSONArray result = new JSONArray(EntityUtils.toString(response.getEntity()));
-            System.out.println(result);
-
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return null;
+    public List<Server> getServers(){
+        return new ArrayList<Server>();
     }
 
 
@@ -90,19 +76,20 @@ public class CommunicationImpl implements Communication {
         return false;
     }
 
-    static public void deregisterServer() {
+    public void deregisterServer() {
         
     }
 
-    static public void initServer(IncomingHandler handler){
+    public void init(IncomingHandler handler, Server server){
+        // For Servers
         incomeHandler = handler;
-        socketPool = new HashMap<String, PoolEntity>();
-        NetworkRouter routerThread = new NetworkRouter(incomeHandler, socketPool);
+        socketPool = new ConcurrentHashMap<String, PoolEntity>();
+        NetworkRouter routerThread = new NetworkRouter(incomeHandler, socketPool, server);
         routerThread.start();
     }
 
-    static public void initClient(IncomingHandler handler){
-        incomeHandler = handler;
-        socketPool = new HashMap<String, PoolEntity>();
+    public void init(){
+        // For Clients
+        socketPool = new ConcurrentHashMap<String, PoolEntity>();
     }
 }
