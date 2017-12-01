@@ -1,7 +1,5 @@
 package nl.vu.ds17800.core.model.units;
 
-import nl.vu.ds17800.core.model.BattleField;
-
 /**
  * A dragon is a non-playing character, which can't
  * move, has a hitpoint range between 50 and 100
@@ -22,10 +20,10 @@ public class Dragon extends Unit {
      * Spawn a new dragon, initialize the
      * reaction speed
      */
-    public Dragon(BattleField battleField, int x, int y) {
+    public Dragon(int unitId, int x, int y) {
         /* Spawn the dragon with a random number of hitpoints between
          * 50..100 and 5..20 attackpoints. */
-        super(battleField,
+        super(unitId,
                 (int) (Math.random() * (MAX_HITPOINTS - MIN_HITPOINTS) + MIN_HITPOINTS),
                 (int) (Math.random() * (MAX_ATTACKPOINTS - MIN_ATTACKPOINTS) + MIN_ATTACKPOINTS));
 

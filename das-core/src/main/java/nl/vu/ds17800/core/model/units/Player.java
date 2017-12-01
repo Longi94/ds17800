@@ -1,7 +1,5 @@
 package nl.vu.ds17800.core.model.units;
 
-import nl.vu.ds17800.core.model.BattleField;
-
 /**
  * A Player is, as the name implies, a playing
  * character. It can move in the four wind directions,
@@ -21,9 +19,9 @@ public class Player extends Unit {
      * Create a player, initialize both
      * the hit and the attackpoints.
      */
-    public Player(BattleField battleField, int x, int y) {
+    public Player(int unitId, int x, int y) {
         /* Initialize the hitpoints and attackpoints */
-        super(battleField,
+        super(unitId,
                 (int) (Math.random() * (MAX_HITPOINTS - MIN_HITPOINTS) + MIN_HITPOINTS),
                 (int) (Math.random() * (MAX_ATTACKPOINTS - MIN_ATTACKPOINTS) + MIN_ATTACKPOINTS));
     }

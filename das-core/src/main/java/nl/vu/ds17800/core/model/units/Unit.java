@@ -1,7 +1,5 @@
 package nl.vu.ds17800.core.model.units;
 
-import nl.vu.ds17800.core.model.BattleField;
-
 import java.io.Serializable;
 
 /**
@@ -27,8 +25,6 @@ public abstract class Unit implements Serializable {
     // Identifier of the unit
     private int unitID;
 
-    protected BattleField battleField;
-
     public enum UnitType {
         PLAYER, DRAGON, UNDEFINED
     }
@@ -41,7 +37,7 @@ public abstract class Unit implements Serializable {
      * @param maxHealth is the maximum health of
      *                  this specific unit.
      */
-    public Unit(BattleField battleField, int maxHealth, int attackPoints) {
+    public Unit(int unitId, int maxHealth, int attackPoints) {
 
         // Initialize the max health and health
         hitPoints = maxHitPoints = maxHealth;
@@ -49,10 +45,8 @@ public abstract class Unit implements Serializable {
         // Initialize the attack points
         this.attackPoints = attackPoints;
 
-        this.battleField = battleField;
-
         // Get a new unit id
-        this.unitID = battleField.getNewUnitID();
+        this.unitID = unitId;
     }
 
     /**
@@ -68,10 +62,6 @@ public abstract class Unit implements Serializable {
         }
 
         hitPoints = Math.min(hitPoints + modifier, maxHitPoints);
-
-        if (hitPoints <= 0) {
-            battleField.removeUnit(this);
-        }
     }
 
     /**
