@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * The actual battlefield where the fighting takes place.
@@ -19,10 +20,6 @@ public class BattleField implements Serializable {
     /* The array of units */
     private Unit[][] map;
 
-    /* The last id that was assigned to an unit. This variable is used to
-     * enforce that each unit has its own unique id.
-     */
-    private int lastUnitID = 0;
     private ArrayList<Unit> units = new ArrayList<>();
 
     /**
@@ -195,8 +192,8 @@ public class BattleField implements Serializable {
      *
      * @return int: a new unique unit ID.
      */
-    public int getNewUnitID() {
-        return ++lastUnitID;
+    public String getNewUnitID() {
+        return UUID.randomUUID().toString();
     }
 
     /**

@@ -25,7 +25,7 @@ public abstract class Unit implements Serializable {
     private int attackPoints;
 
     // Identifier of the unit
-    private int unitID;
+    private String unitID;
 
     protected BattleField battleField;
 
@@ -84,7 +84,7 @@ public abstract class Unit implements Serializable {
     /**
      * @return the unique unit identifier.
      */
-    public int getUnitID() {
+    public String getUnitID() {
         return unitID;
     }
 
