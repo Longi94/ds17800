@@ -1,4 +1,4 @@
-package nl.vu.ds17800.core;
+package nl.vu.ds17800.core.model;
 
 /**
  * Different request types for the
@@ -7,5 +7,5 @@ package nl.vu.ds17800.core;
  * @author Pieter Anemaet, Boaz Pat-El
  */
 public enum MessageRequest {
-    spawnUnit, getUnit, moveUnit, putUnit, removeUnit, getType, dealDamage, healDamage,
+    spawnUnit, moveUnit, putUnit, removeUnit, dealDamage, healDamage,
 }
