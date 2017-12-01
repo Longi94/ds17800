@@ -1,5 +1,7 @@
 package nl.vu.ds17800.core.model.units;
 
+import java.util.Random;
+
 /**
  * A dragon is a non-playing character, which can't
  * move, has a hitpoint range between 50 and 100
@@ -17,15 +19,30 @@ public class Dragon extends Unit {
     public static final int MAX_ATTACKPOINTS = 20;
 
     /**
-     * Spawn a new dragon, initialize the
-     * reaction speed
+     * Spawn a new dragon, initialize both the hit and the attackpoints.
+     *
+     * @param unitId the id of the unit
+     * @param x      x coordinate
+     * @param y      y coordinate
      */
     public Dragon(int unitId, int x, int y) {
+        this(unitId, x, y, new Random());
+    }
+
+    /**
+     * Spawn a new dragon, initialize the reaction speed
+     *
+     * @param unitId the id of the unit
+     * @param x      x coordinate
+     * @param y      y coordinate
+     * @param random the random object, used to make simulation reproducible
+     */
+    public Dragon(int unitId, int x, int y, Random random) {
         /* Spawn the dragon with a random number of hitpoints between
          * 50..100 and 5..20 attackpoints. */
         super(unitId,
-                (int) (Math.random() * (MAX_HITPOINTS - MIN_HITPOINTS) + MIN_HITPOINTS),
-                (int) (Math.random() * (MAX_ATTACKPOINTS - MIN_ATTACKPOINTS) + MIN_ATTACKPOINTS));
+                (int) (random.nextDouble() * (MAX_HITPOINTS - MIN_HITPOINTS) + MIN_HITPOINTS),
+                (int) (random.nextDouble() * (MAX_ATTACKPOINTS - MIN_ATTACKPOINTS) + MIN_ATTACKPOINTS));
 
         this.setPosition(x, y);
     }

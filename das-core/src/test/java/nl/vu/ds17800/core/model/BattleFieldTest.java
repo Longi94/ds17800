@@ -6,6 +6,9 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author lngtr
@@ -39,12 +42,13 @@ public class BattleFieldTest {
                     ".........................\n" +
                     ".........................\n" +
                     ".........................\n" +
-                    "ID:   1 | TYPE:    DRAGON | COORDS:(21,12) | HEALTH: 62/ 62 | ATTACK: 18\n" +
-                    "ID:   2 | TYPE:    PLAYER | COORDS:( 3, 3) | HEALTH: 19/ 19 | ATTACK:  1\n" +
-                    "ID:   3 | TYPE:    PLAYER | COORDS:(10, 9) | HEALTH:  5/ 15 | ATTACK:  7\n";
+                    "ID:   1 | TYPE:    DRAGON | COORDS:(21,12) | HEALTH: 86/ 86 | ATTACK:  8\n" +
+                    "ID:   2 | TYPE:    PLAYER | COORDS:( 3, 3) | HEALTH: 13/ 13 | ATTACK:  5\n" +
+                    "ID:   3 | TYPE:    PLAYER | COORDS:(10, 9) | HEALTH:  4/ 14 | ATTACK:  3\n";
 
     @Test
     public void testToString() throws Exception {
+        Random random = new Random(0L);
         BattleField battleField = new BattleField();
 
         Map<String, Object> action = new HashMap<>();
@@ -52,19 +56,19 @@ public class BattleFieldTest {
         action.put("request", MessageRequest.spawnUnit);
         action.put("x", 21);
         action.put("y", 12);
-        action.put("unit", new Dragon(battleField.getNewUnitID(), 0, 0));
+        action.put("unit", new Dragon(battleField.getNewUnitID(), 0, 0, random));
 
         battleField.apply(action);
 
         action.put("x", 3);
         action.put("y", 3);
-        action.put("unit", new Player(battleField.getNewUnitID(), 0, 0));
+        action.put("unit", new Player(battleField.getNewUnitID(), 0, 0, random));
 
         battleField.apply(action);
 
         action.put("x", 10);
         action.put("y", 9);
-        action.put("unit", new Player(battleField.getNewUnitID(), 0, 0));
+        action.put("unit", new Player(battleField.getNewUnitID(), 0, 0, random));
 
         battleField.apply(action);
 
@@ -73,10 +77,7 @@ public class BattleFieldTest {
 
         battleField.apply(action);
 
-        System.out.println(battleField);
-
-        // TODO random fucks this up, need seed
-        // Assert.assertEquals(TO_STRING_EXPECTED, battleField.toString());
+        assertEquals(TO_STRING_EXPECTED, battleField.toString());
     }
 
 }

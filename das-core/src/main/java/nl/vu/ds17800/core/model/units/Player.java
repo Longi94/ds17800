@@ -1,5 +1,7 @@
 package nl.vu.ds17800.core.model.units;
 
+import java.util.Random;
+
 /**
  * A Player is, as the name implies, a playing
  * character. It can move in the four wind directions,
@@ -16,14 +18,31 @@ public class Player extends Unit {
     public static final int MAX_ATTACKPOINTS = 10;
 
     /**
-     * Create a player, initialize both
-     * the hit and the attackpoints.
+     * Create a player, initialize both the hit and the attackpoints.
+     *
+     * @param unitId the id of the unit
+     * @param x      x coordinate
+     * @param y      y coordinate
      */
     public Player(int unitId, int x, int y) {
+        this(unitId, x, y, new Random());
+    }
+
+    /**
+     * Create a player, initialize both the hit and the attackpoints.
+     *
+     * @param unitId the id of the unit
+     * @param x      x coordinate
+     * @param y      y coordinate
+     * @param random the random object, used to make simulation reproducible
+     */
+    public Player(int unitId, int x, int y, Random random) {
         /* Initialize the hitpoints and attackpoints */
         super(unitId,
-                (int) (Math.random() * (MAX_HITPOINTS - MIN_HITPOINTS) + MIN_HITPOINTS),
-                (int) (Math.random() * (MAX_ATTACKPOINTS - MIN_ATTACKPOINTS) + MIN_ATTACKPOINTS));
+                (int) (random.nextDouble() * (MAX_HITPOINTS - MIN_HITPOINTS) + MIN_HITPOINTS),
+                (int) (random.nextDouble() * (MAX_ATTACKPOINTS - MIN_ATTACKPOINTS) + MIN_ATTACKPOINTS));
+
+        this.setPosition(x, y);
     }
 
     @Override
