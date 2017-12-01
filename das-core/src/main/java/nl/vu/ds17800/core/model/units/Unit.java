@@ -120,4 +120,16 @@ public abstract class Unit implements Serializable {
     public UnitType getType() {
         return UnitType.UNDEFINED;
     }
+
+    @Override
+    public String toString() {
+        return String.format("ID:%4d | TYPE:%10s | COORDS:(%2d,%2d) | HEALTH:%3d/%3d | ATTACK:%3d",
+                this.unitID,
+                getType().toString(),
+                this.x,
+                this.y,
+                this.hitPoints,
+                this.maxHitPoints,
+                this.attackPoints);
+    }
 }

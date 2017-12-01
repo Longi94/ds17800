@@ -261,4 +261,30 @@ public class BattleField implements Serializable {
 
         return players;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        int maxIdLength = String.valueOf(lastUnitID).length();
+        String intFormat = "%" + maxIdLength + "d";
+        String strFormat = "%" + maxIdLength + "s";
+
+        for (int i = map.length - 1; i >= 0; i--) {
+            for (int j = 0; j < map[i].length; j++) {
+                if (map[j][i] != null) {
+                    builder.append(String.format(intFormat, map[j][i].getUnitID()));
+                } else {
+                    builder.append(String.format(strFormat, "."));
+                }
+            }
+            builder.append('\n');
+        }
+
+        for (Unit unit : units) {
+            builder.append(unit).append('\n');
+        }
+
+        return builder.toString();
+    }
 }
