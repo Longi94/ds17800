@@ -43,6 +43,38 @@ public class BattleField implements Serializable {
     }
 
     /**
+     * Get random free x y position in the battle field
+     * @return [x,y] or otherwise null if no free position was found
+     */
+    public int[] getRandomFreePosition() {
+        int[] pos;
+
+        int x, y, attempt = 0;
+        do {
+            x = (int) (Math.random() * BattleField.MAP_WIDTH);
+            y = (int) (Math.random() * BattleField.MAP_HEIGHT);
+            attempt++;
+        } while (getUnit(x, y) != null && attempt < 10);
+
+        if (getUnit(x,y) != null) {
+            return null;
+        }
+
+        pos = new int[]{x, y};
+
+        return pos;
+    }
+
+    public Unit findUnitById(String id) {
+        for (Unit u : units) {
+            if (id.equals(u.getUnitID())) {
+                return u;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Puts a new unit at the specified position. First, it
      * checks whether the position is empty, if not, it
      * does nothing.
