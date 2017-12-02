@@ -18,9 +18,7 @@ public interface Communication {
      *
      * @return list of master nodes, asked from middleware
      */
-    public static List<Server> getServers(){
-        return null;
-    };
+    public List<Server> getServers();
 
     /** For Servers
      * Tries to be registered as new master node
