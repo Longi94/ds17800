@@ -147,18 +147,6 @@ public class BattleField implements Serializable {
     }
 
     /**
-     * Remove a unit from the field.
-     *
-     * @param unit unit to remove
-     */
-    public void removeUnit(Unit unit) {
-        if (map[unit.getX()][unit.getY()] == unit) {
-            map[unit.getX()][unit.getY()] = null;
-            units.remove(unit);
-        }
-    }
-
-    /**
      * Returns a new unique unit ID.
      *
      * @return int: a new unique unit ID.
@@ -188,6 +176,10 @@ public class BattleField implements Serializable {
                 unit = getUnit(x, y);
                 if (unit != null) {
                     unit.adjustHitPoints(-(Integer) action.get("damage"));
+
+                    if (unit.getHitPoints() <= 0) {
+                        removeUnit(x, y);
+                    }
                 }
                 break;
             }
@@ -268,5 +260,27 @@ public class BattleField implements Serializable {
         }
 
         return players;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = map.length - 1; i >= 0; i--) {
+            for (int j = 0; j < map[i].length; j++) {
+                if (map[j][i] != null) {
+                    builder.append(String.format("%2d", units.indexOf(map[j][i])));
+                } else {
+                    builder.append(" .");
+                }
+            }
+            builder.append('\n');
+        }
+
+        for (int i = 0; i < units.size(); i++) {
+            builder.append(String.format("%2d | ", i)).append(units.get(i)).append('\n');
+        }
+
+        return builder.toString();
     }
 }
