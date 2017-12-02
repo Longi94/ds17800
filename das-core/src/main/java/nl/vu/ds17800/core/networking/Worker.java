@@ -30,7 +30,7 @@ public class Worker extends Thread{
         while(true){
             try {
                 Message message = (Message)oin.readObject();
-                if(message.get("__communicationType") == HEARTBEATING)
+                if(message.get("__communicationType").equals(HEARTBEATING))
                     continue;
 
                 if(message.get("__communicationType").equals("__response")){

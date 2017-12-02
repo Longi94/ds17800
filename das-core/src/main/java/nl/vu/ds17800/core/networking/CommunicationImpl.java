@@ -2,14 +2,6 @@ package nl.vu.ds17800.core.networking;
 
 import nl.vu.ds17800.core.networking.response.Message;
 import nl.vu.ds17800.core.networking.response.Server;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.HttpResponse;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -20,7 +12,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,22 +38,7 @@ public class CommunicationImpl implements Communication {
             oout = new ObjectOutputStream(entity.socket.getOutputStream());
             Worker worker = new Worker(incomeHandler, entity);
             worker.start();
-        } else {
-            Message testMessage = new Message();
-            testMessage.put("__communicationType", HEARTBEATING);
-            oout = new ObjectOutputStream(entity.socket.getOutputStream());
-            try{
-                oout.writeObject(testMessage);
-            } catch (IOException e){
-                entity = new PoolEntity();
-                entity.socket = new Socket(dest.ipaddr, DSPORT);
-                socketPool.put(inetAddress, entity);
-                Worker worker = new Worker(incomeHandler, entity);
-                worker.start();
-                oout = new ObjectOutputStream(entity.socket.getOutputStream());
-            }
         }
-        socketPool.put(inetAddress, entity);
         message.put("__communicationType", "__request");
         KeyGenerator keyGen;
         keyGen = KeyGenerator.getInstance("AES");
