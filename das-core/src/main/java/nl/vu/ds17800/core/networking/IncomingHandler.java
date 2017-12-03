@@ -14,4 +14,5 @@ public interface IncomingHandler {
      * @return
      */
     public Message handleMessage(Message message);
+    public void connectionLost(String ipaddr);
 }

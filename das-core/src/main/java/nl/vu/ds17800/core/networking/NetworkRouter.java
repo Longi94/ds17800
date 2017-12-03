@@ -11,12 +11,15 @@ public class NetworkRouter extends Thread{
     private IncomingHandler messageHandler;
     private Map<String, PoolEntity> socketPool;
     private Server serverDescriptor;
+    private ConnectionTester testerThread;
 
     public NetworkRouter(IncomingHandler incomingHandler, Map<String, PoolEntity> sockets, Server server){
         super();
         socketPool = sockets;
         messageHandler = incomingHandler;
         serverDescriptor = server;
+        testerThread = new ConnectionTester(socketPool, incomingHandler);
+        testerThread.start();
     }
 
     public void run(){
@@ -35,7 +38,9 @@ public class NetworkRouter extends Thread{
             }
             PoolEntity entity = new PoolEntity();
             entity.socket = socket;
-            socketPool.put(socket.getInetAddress().toString(), entity);
+            synchronized (socketPool){
+                socketPool.put(socket.getInetAddress().toString(), entity);
+            }
             Worker worker = new Worker(messageHandler, entity);
             worker.start();
         }

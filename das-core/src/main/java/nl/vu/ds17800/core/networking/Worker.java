@@ -6,6 +6,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+
+/**
+ * Class for implementation listener of specific Socket
+ * it always listens the socket and either pushes response message to responseBuffer or just answers with message using
+ * the same __communicationID and response __communicationType
+ */
 public class Worker extends Thread{
     private final String    HEARTBEATING = "heartbeating";
     private IncomingHandler messageshandler;
