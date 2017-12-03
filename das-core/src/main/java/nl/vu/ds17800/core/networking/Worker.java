@@ -39,9 +39,9 @@ public class Worker extends Thread{
                     }
                     continue;
                 }
-                String messageKey = message.get("__communicationKey").toString();
+                String messageKey = message.get("__communicationID").toString();
                 message = messageshandler.handleMessage(message);
-                message.put("__communicationKey", messageKey);
+                message.put("__communicationID", messageKey);
                 message.put("__communicationType", "__response");
                 oout.writeObject(message);
             } catch (IOException e) {

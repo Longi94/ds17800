@@ -17,7 +17,7 @@ public class Response {
             long curTime = System.currentTimeMillis();
             while(true){
                 for(Message message: responseBuffer){
-                    if(message.get("__communicationKey").equals(messageKey)){
+                    if(message.get("__communicationID").equals(messageKey)){
                         responseBuffer.remove(message);
                         return message;
                     }

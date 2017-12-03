@@ -57,7 +57,7 @@ public class CommunicationImpl implements Communication {
         keyGen.init(256); // for example
         SecretKey secretKey = keyGen.generateKey();
         String keyString = secretKey.getEncoded().toString();
-        message.put("__communicationKey", keyString);
+        message.put("__communicationID", keyString);
         oout.writeObject(message);
         return new Response(keyString, entity.responseBuffer);
     }
