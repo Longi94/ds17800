@@ -1,12 +1,12 @@
 package nl.vu.ds17800.core.networking;
 
 import nl.vu.ds17800.core.networking.response.Message;
+import nl.vu.ds17800.core.networking.response.Response;
 import nl.vu.ds17800.core.networking.response.Server;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -24,12 +24,24 @@ public class CommunicationImpl implements Communication {
     private IncomingHandler incomeHandler;
     private Map<String, PoolEntity> socketPool;
 
-    public Message sendMessage(Message message, Server dest) throws IOException, ClassNotFoundException, InterruptedException, NoSuchAlgorithmException {
+    public CommunicationImpl(IncomingHandler handler, Server server){
+        // For Servers
+        incomeHandler = handler;
+        socketPool = new ConcurrentHashMap<String, PoolEntity>();
+        NetworkRouter routerThread = new NetworkRouter(incomeHandler, socketPool, server);
+        routerThread.start();
+    }
+
+    public CommunicationImpl(){
+        // For Clients
+        socketPool = new ConcurrentHashMap<String, PoolEntity>();
+    }
+
+    public Response sendMessageAsync(Message message, Server dest) throws IOException, ClassNotFoundException, InterruptedException, NoSuchAlgorithmException {
         String inetAddress = dest.ipaddr;
         int DSPORT = dest.serverPort;
         PoolEntity entity;
         ObjectOutputStream oout = null;
-        ObjectInputStream oin = null;
         entity = socketPool.get(inetAddress);
         if(entity == null){
             entity = new PoolEntity();
@@ -46,45 +58,21 @@ public class CommunicationImpl implements Communication {
         SecretKey secretKey = keyGen.generateKey();
         String keyString = secretKey.getEncoded().toString();
         message.put("__communicationKey", keyString);
-        synchronized(entity.responseBuffer){
-            oout.writeObject(message);
-            waiting_for_response:
-            while(true){
-                entity.responseBuffer.wait();
-                for(Message message_i : entity.responseBuffer)
-                    if(message_i.get("__communicationKey").equals(keyString)) {
-                        message = message_i;
-                        break waiting_for_response;
-                    }
-            }
-        }
-        entity.responseBuffer.remove(message);
-        return message;
+        oout.writeObject(message);
+        return new Response(keyString, entity.responseBuffer);
     }
+
+    public Message sendMessage(Message message, Server dest, int timeout) throws ClassNotFoundException, NoSuchAlgorithmException, InterruptedException, IOException {
+        return sendMessageAsync(message, dest).getResponse(timeout);
+    };
 
     public List<Server> getServers(){
         return new ArrayList<Server>();
     }
-
-
-    public boolean registerServer() {
-        return false;
-    }
-
-    public void deregisterServer() {
-        
-    }
-
-    public void init(IncomingHandler handler, Server server){
-        // For Servers
-        incomeHandler = handler;
-        socketPool = new ConcurrentHashMap<String, PoolEntity>();
-        NetworkRouter routerThread = new NetworkRouter(incomeHandler, socketPool, server);
-        routerThread.start();
-    }
-
-    public void init(){
-        // For Clients
-        socketPool = new ConcurrentHashMap<String, PoolEntity>();
-    }
+//
+//    public boolean registerServer() {
+//        return false;
+//    }
+//
+//    public void deregisterServer() { }
 }

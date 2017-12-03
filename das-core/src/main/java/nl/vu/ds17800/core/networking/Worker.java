@@ -5,7 +5,6 @@ import nl.vu.ds17800.core.networking.response.Message;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.Socket;
 
 public class Worker extends Thread{
     private final String    HEARTBEATING = "heartbeating";
