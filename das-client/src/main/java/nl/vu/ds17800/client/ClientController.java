@@ -7,6 +7,11 @@ import nl.vu.ds17800.core.networking.IncomingHandler;
 import nl.vu.ds17800.core.networking.response.Message;
 import nl.vu.ds17800.core.networking.response.Server;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.TreeMap;
+
 import static nl.vu.ds17800.core.model.MessageRequest.*;
 
 public class ClientController implements IncomingHandler{
@@ -14,7 +19,7 @@ public class ClientController implements IncomingHandler{
     /**
      * List of hardcoded servers
      */
-    private Server[] servers;
+    private ArrayList<Server> servers;
     private Server myServer;
 
     private CommunicationImpl communication;
@@ -30,8 +35,47 @@ public class ClientController implements IncomingHandler{
      * @return server descriptor
      */
     private Server getServerToConnect() {
-        // @Saidgani gimme that method! Spasiba :)
-        return null;
+
+        // Using TreeMap to have already ordered list of servers (by ping)
+        TreeMap<Integer,Server> pingServMap = new TreeMap<Integer,String>();
+
+        for(Server srv : servers) {
+
+            String pingTime = "";
+
+            String pingStringSmd = "ping " + srv.ipaddr;
+
+            Runtime runtime = Runtime.getRuntime();
+            try {
+                Process process = runtime.exec(pingStringSmd);
+                BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                String inputLine = in.readLine();
+                while ((inputLine != null)) {
+                    if (inputLine.length() > 0 && inputLine.contains("time")) {
+                        pingTime = inputLine.substring(inputLine.indexOf("time"));
+                        break;
+                    }
+                    inputLine = in.readLine();
+                }
+                System.out.println("Server: " + srv.ipaddr + " | ping: " + pingTime);
+
+            } catch (Exception e) {
+                System.out.println("Error while pinging server: " + srv.ipaddr);
+                continue;
+            }
+
+            Integer pingVal = Integer.parseInt(pingTime);
+            pingServMap.put(pingVal, srv);
+
+        }
+
+        if(!pingServMap.isEmpty()) {
+            return pingServMap.get(pingServMap.firstKey());
+        } else {
+            System.out.println("Could not find any server to connect.");
+            return null;
+        }
     }
 
     /**
