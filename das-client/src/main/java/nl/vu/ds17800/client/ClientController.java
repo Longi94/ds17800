@@ -176,7 +176,6 @@ public class ClientController implements IncomingHandler{
         }
 
         try {
-            // @johannes - what kind of ACK I will receive? how should I handle it?
             communication.sendMessage(message, myServer, SND_MSG_TIMEOUT);
         } catch (Exception e) {
             System.out.println("Could not connect to server: " + e.getMessage());
