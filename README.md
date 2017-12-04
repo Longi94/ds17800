@@ -1,4 +1,5 @@
 # fs17800
+[![Build Status](https://travis-ci.com/Longi94/ds17800.svg?token=q2uGqSPNQRpjpMzytpn6&branch=master)](https://travis-ci.com/Longi94/ds17800)
 
 ## Fault tolerance
 * Mirrored servers, no super nodes.
