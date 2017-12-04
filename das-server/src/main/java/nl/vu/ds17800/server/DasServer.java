@@ -1,24 +1,48 @@
 package nl.vu.ds17800.server;
 
+import nl.vu.ds17800.core.model.BattleField;
+import nl.vu.ds17800.core.networking.Communication;
+import nl.vu.ds17800.core.networking.CommunicationImpl;
+import nl.vu.ds17800.core.networking.Entities.Server;
+
+import java.io.IOException;
+
 /**
  * @author lngtr
  * @since 2017-11-16
  */
 public class DasServer {
-    DasServer() {
-        // send to bootstrap node that we're online, receive online servers
 
-        // set up a socket with all game servers
+    DasServer(Server serverDescr) {
+        BattleField bf = new BattleField();
 
-        // set up connections with all server nodes
+        ServerController sc = new ServerController(bf);
+        Communication c =  new CommunicationImpl(sc, serverDescr);
+        sc.setCommuncation(c);
 
-        // set up game state, BattleField using one of the peers for initial data
+        System.out.println("Sleeping 5 seconds while other servers are coming online");
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-        // start accepting incoming connections
+        for (Server s : c.getServers()) {
+            try {
+                sc.connectServer(s);
+            } catch (IOException e) {
+                System.out.println("Unable to connect to server " + s.ipaddr + ":" + s.serverPort);
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-
     public static void main(String[] args) {
-        System.out.println("asd");
+        Server serverDescr = new Server();
+        serverDescr.serverPort = 10101;
+
+        new DasServer(serverDescr);
     }
 }

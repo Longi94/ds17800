@@ -22,13 +22,16 @@ public class NetworkRouter extends Thread{
         testerThread.start();
     }
 
-    public void run(){
+    public void run() {
         int DSPORT = serverDescriptor.serverPort;
         ServerSocket ssocket = null;
         try {
             ssocket = new ServerSocket(DSPORT);
         } catch (IOException e) {
         }
+
+        // Starting listning to incoming connectoins o n port
+
         while(true){
             Socket socket = null;
             try{

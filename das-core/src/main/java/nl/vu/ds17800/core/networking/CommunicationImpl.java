@@ -7,11 +7,9 @@ import nl.vu.ds17800.core.networking.Entities.Server;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +27,7 @@ public class CommunicationImpl implements Communication {
     private final String    HEARTBEATING = "heartbeating";
     private IncomingHandler incomeHandler;
     private Map<String, PoolEntity> socketPool;
-    private static Integer mesID;
+    private static Integer mesID = 0;
 
     public CommunicationImpl(IncomingHandler handler, Server server){
         // For Servers
