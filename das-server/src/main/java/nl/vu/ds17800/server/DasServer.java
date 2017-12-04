@@ -40,8 +40,13 @@ public class DasServer {
     }
 
     public static void main(String[] args) {
+        if(args.length < 1) {
+            System.out.println("Usage: server.jar 10100|10101|10102|10103|10104");
+            System.exit(1);
+        }
+        int port = Integer.parseInt(args[0]);
         Server serverDescr = new Server();
-        serverDescr.serverPort = 10101;
+        serverDescr.serverPort = port;
 
         new DasServer(serverDescr);
     }

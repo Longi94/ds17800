@@ -277,9 +277,4 @@ public class ServerController implements IncomingHandler {
 
         System.out.println("ok got response.." + resp.get("request"));
     }
-
-    @Override
-    public void connectionLost(String ipaddr, int port) {
-        return;
-    }
 }
