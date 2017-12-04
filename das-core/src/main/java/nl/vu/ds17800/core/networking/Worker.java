@@ -46,6 +46,10 @@ public class Worker extends Thread{
                 }
                 String messageKey = message.get("__communicationID").toString();
                 message = messageshandler.handleMessage(message);
+
+                if(message == null)
+                    continue;
+
                 message.put("__communicationID", messageKey);
                 message.put("__communicationType", "__response");
                 oout.writeObject(message);

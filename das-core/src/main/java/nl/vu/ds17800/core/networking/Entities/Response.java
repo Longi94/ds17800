@@ -12,7 +12,7 @@ public class Response {
         responseBuffer = buffer;
     }
 
-    public Message getResponse(int timeout) throws IOException, InterruptedException {
+    public Message getResponse(int timeout) throws InterruptedException {
         synchronized (responseBuffer){
             long curTime = System.currentTimeMillis();
             while(true){
@@ -24,7 +24,7 @@ public class Response {
                 }
                 long iterTime = System.currentTimeMillis();
                 if( (iterTime - curTime ) > timeout)
-                    throw new IOException();
+                    throw new InterruptedException();
                 responseBuffer.wait();
             }
         }
