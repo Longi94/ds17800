@@ -3,10 +3,13 @@ package nl.vu.ds17800.client;
 import nl.vu.ds17800.core.model.units.Unit;
 
 import java.util.List;
+import java.util.Random;
 
 import static nl.vu.ds17800.core.model.MessageRequest.dealDamage;
 
 public class DragonController implements Runnable {
+
+    private Random random = new Random(0L);
 
     public DragonController() {}
 
@@ -30,7 +33,7 @@ public class DragonController implements Runnable {
                 List<Unit> nearbyPlayers =  DasClient.battleField.getNearbyPlayers(myUnit.getX(), myUnit.getY(), Unit.UnitType.PLAYER, 2);
                 if (nearbyPlayers.size() == 0)
                     continue; // There are no players to attack
-                Unit playerToAttack = nearbyPlayers.get((int) (Math.random() * nearbyPlayers.size()));
+                Unit playerToAttack = nearbyPlayers.get((int) (random.nextDouble() * nearbyPlayers.size()));
 
                 // Attack the player
                 ActionWrapper actionWrapper = new ActionWrapper(dealDamage, null, playerToAttack.getX(), playerToAttack.getY(), myUnit.getAttackPoints());

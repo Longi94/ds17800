@@ -2,6 +2,8 @@ package nl.vu.ds17800.client;
 
 import nl.vu.ds17800.core.model.units.Unit;
 
+import java.util.Random;
+
 import static nl.vu.ds17800.core.model.MessageRequest.dealDamage;
 import static nl.vu.ds17800.core.model.MessageRequest.healDamage;
 import static nl.vu.ds17800.core.model.MessageRequest.moveUnit;
@@ -9,6 +11,8 @@ import static nl.vu.ds17800.core.model.MessageRequest.moveUnit;
 public class PlayerController implements Runnable {
 
     private enum Direction {up, down, left, right}
+
+    private Random random = new Random(0L);
 
     public PlayerController() {
     }
@@ -36,7 +40,7 @@ public class PlayerController implements Runnable {
                 }
 
                 // Randomly choose one of the four wind directions to move to if there are no units present
-                direction = Direction.values()[(int) (Direction.values().length * Math.random())];
+                direction = Direction.values()[(int) (Direction.values().length * random.nextDouble())];
 
                 switch (direction) {
                     case up:
