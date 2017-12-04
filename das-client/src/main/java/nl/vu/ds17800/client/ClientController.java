@@ -4,8 +4,8 @@ import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.MessageRequest;
 import nl.vu.ds17800.core.networking.CommunicationImpl;
 import nl.vu.ds17800.core.networking.IncomingHandler;
-import nl.vu.ds17800.core.networking.response.Message;
-import nl.vu.ds17800.core.networking.response.Server;
+import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Entities.Server;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -87,9 +87,10 @@ public class ClientController implements IncomingHandler{
      * @param unitId - my unitId if I am a reconnecting client
      * @return - returns message received as a response
      */
-    private Message connectServer(String unitId) {
+    private Message connectServer(String unitId, String unitType) {
         Message message = new Message();
         message.put("request", clientConnect);
+        message.put("type", unitType);
         if(unitId != null) message.put("id", unitId);
 
         Server serverToConnect = getServerToConnect();
@@ -111,7 +112,7 @@ public class ClientController implements IncomingHandler{
      * @return success flag
      */
     public boolean reconnectServer() {
-        Message serverResponse = connectServer(DasClient.myUnit.getUnitID());
+        Message serverResponse = connectServer(DasClient.myUnit.getUnitID(), null);
 
         if(serverResponse == null) return false;
 
@@ -128,8 +129,8 @@ public class ClientController implements IncomingHandler{
      * After successfull connection battleField and player unit are being set
      * @return succes flag
      */
-    public boolean initialiseConnection() {
-        Message serverResponse = connectServer(null);
+    public boolean initialiseConnection(String unitType) {
+        Message serverResponse = connectServer(null, unitType);
 
         if(serverResponse == null) return false;
 

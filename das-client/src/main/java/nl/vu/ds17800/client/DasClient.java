@@ -17,14 +17,31 @@ public class DasClient {
 
     public static void main(String[] args) {
 
+        if (args.length < 1){
+            System.out.println("Input: \"dragon\" or \"player\" to run the game");
+            return;
+        }
+
+        String unitType = args[0];
+
+        if(!(unitType.equals("dragon") || unitType.equals("player"))) {
+            System.out.println("Wrong unit type!");
+            return;
+        }
+        System.out.println("Unit Type: " + unitType);
         System.out.println("Running...");
 
-        Boolean success = clientController.initialiseConnection();
+        Boolean success = clientController.initialiseConnection(unitType);
 
         if(success) {
             System.out.println("Server connection set");
             System.out.println("Launching simulation..");
-            Thread simulation = new Thread(new PlayerController());
+            Thread simulation;
+            if(unitType.equals("player")) {
+                simulation = new Thread(new PlayerController());
+            } else {
+                simulation = new Thread(new DragonController());
+            }
             simulation.start();
             System.out.println("Simulation launched.");
         } else {
