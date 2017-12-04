@@ -21,13 +21,13 @@ public class PlayerController implements Runnable {
 
         while (true) {
             try {
-				// Sleep while the player is considering its next move (HARDCODED 500)
+                // Sleep while the player is considering its next move (HARDCODED 500)
                 Thread.currentThread().sleep((int) (500));
 
                 // Get current state of my unit
                 Unit myUnit = DasClient.myUnit;
 
-				// Stop if the player runs out of hitpoints
+                // Stop if the player runs out of hitpoints
                 if (myUnit.getHitPoints() <= 0) {
                     System.out.println("YOU DIED, GAME OVER");
                     break;
