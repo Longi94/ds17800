@@ -65,6 +65,7 @@ public class ServerController implements IncomingHandler {
                     msgSpawnUnit.put("request", spawnUnit);
 
                     int pos[] = bf.getRandomFreePosition();
+
                     // BattleField assigns the unit its position, thus -1, -1
                     player = new Player(this.bf.getNewUnitID(),-1, -1);
                     msgSpawnUnit.put("unit", player);
