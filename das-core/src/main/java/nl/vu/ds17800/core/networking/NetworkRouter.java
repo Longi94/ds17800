@@ -1,6 +1,6 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.response.Server;
+import nl.vu.ds17800.core.networking.Entities.Server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -39,6 +39,14 @@ public class NetworkRouter extends Thread{
             PoolEntity entity = new PoolEntity();
             entity.socket = socket;
             synchronized (socketPool){
+                PoolEntity existance = socketPool.get(socket.getInetAddress());
+                if(existance != null){
+                    try {
+                        existance.socket.close();
+                    } catch (Exception e) {
+                        // already closed; put General Exception because of I am afraid of nullPointers :)
+                    }
+                }
                 socketPool.put(socket.getInetAddress().toString(), entity);
             }
             Worker worker = new Worker(messageHandler, entity);

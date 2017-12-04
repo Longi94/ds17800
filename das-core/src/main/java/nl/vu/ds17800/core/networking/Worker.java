@@ -1,6 +1,6 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.response.Message;
+import nl.vu.ds17800.core.networking.Entities.Message;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,8 +9,8 @@ import java.io.ObjectOutputStream;
 
 /**
  * Class for implementation listener of specific Socket
- * it always listens the socket and either pushes response message to responseBuffer or just answers with message using
- * the same __communicationID and response __communicationType
+ * it always listens the socket and either pushes Entities message to responseBuffer or just answers with message using
+ * the same __communicationID and Entities __communicationType
  */
 public class Worker extends Thread{
     private final String    HEARTBEATING = "heartbeating";
@@ -25,7 +25,6 @@ public class Worker extends Thread{
     public void run(){
         ObjectInputStream oin = null;
         ObjectOutputStream oout = null;
-        System.out.println("Started listening port" + connectionEntity.socket.getInetAddress() + " on port " + connectionEntity.socket.getPort());
         try {
             oin = new ObjectInputStream(connectionEntity.socket.getInputStream());
             oout = new ObjectOutputStream(connectionEntity.socket.getOutputStream());
@@ -47,6 +46,10 @@ public class Worker extends Thread{
                 }
                 String messageKey = message.get("__communicationID").toString();
                 message = messageshandler.handleMessage(message);
+
+                if(message == null)
+                    continue;
+
                 message.put("__communicationID", messageKey);
                 message.put("__communicationType", "__response");
                 oout.writeObject(message);
