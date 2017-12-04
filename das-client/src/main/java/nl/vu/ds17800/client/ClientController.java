@@ -7,8 +7,6 @@ import nl.vu.ds17800.core.networking.IncomingHandler;
 import nl.vu.ds17800.core.networking.Entities.Message;
 import nl.vu.ds17800.core.networking.Entities.Server;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.TreeMap;
@@ -99,6 +97,8 @@ public class ClientController implements IncomingHandler{
         try {
             System.out.println("Trying to connect server: " + serverToConnect.ipaddr + ", port: " + serverToConnect.serverPort);
             response = communication.sendMessage(message, serverToConnect, SND_MSG_TIMEOUT);
+            System.out.println("Connected!");
+            this.myServer = serverToConnect;
         } catch (Exception e) {
             System.out.println("Could not connect to server: " + e.getMessage());
             return null;
@@ -176,7 +176,6 @@ public class ClientController implements IncomingHandler{
         }
 
         try {
-            // @johannes - what kind of ACK I will receive? how should I handle it?
             communication.sendMessage(message, myServer, SND_MSG_TIMEOUT);
         } catch (Exception e) {
             System.out.println("Could not connect to server: " + e.getMessage());
