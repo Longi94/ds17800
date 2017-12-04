@@ -6,7 +6,7 @@ import nl.vu.ds17800.core.model.units.Player;
 import nl.vu.ds17800.core.model.units.Unit;
 import nl.vu.ds17800.core.networking.Communication;
 import nl.vu.ds17800.core.networking.IncomingHandler;
-import nl.vu.ds17800.core.networking.response.Message;
+import nl.vu.ds17800.core.networking.Entities.Message;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
 
@@ -66,7 +66,7 @@ public class ServerController implements IncomingHandler {
 
                     int pos[] = bf.getRandomFreePosition();
                     // BattleField assigns the unit its position, thus -1, -1
-                    player = new Player(this.bf,-1, -1);
+                    player = new Player(this.bf.getNewUnitID(),-1, -1);
                     msgSpawnUnit.put("unit", player);
                     msgSpawnUnit.put("x", pos[0]);
                     msgSpawnUnit.put("y", pos[1]);
@@ -136,5 +136,10 @@ public class ServerController implements IncomingHandler {
                 // olol
         }
         return null;
+    }
+
+    @Override
+    public void connectionLost(String ipaddr) {
+        return;
     }
 }

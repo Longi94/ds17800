@@ -84,3 +84,5 @@ fabric.properties
 # macOS
 .DS_Store
 
+# DAS build files
+das-*/build/
