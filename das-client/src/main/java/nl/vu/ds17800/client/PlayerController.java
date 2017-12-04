@@ -1,12 +1,11 @@
 package nl.vu.ds17800.client;
 
+import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.units.Unit;
 
 import java.util.Random;
 
-import static nl.vu.ds17800.core.model.MessageRequest.dealDamage;
-import static nl.vu.ds17800.core.model.MessageRequest.healDamage;
-import static nl.vu.ds17800.core.model.MessageRequest.moveUnit;
+import static nl.vu.ds17800.core.model.MessageRequest.*;
 
 public class PlayerController implements Runnable {
 
@@ -26,7 +25,7 @@ public class PlayerController implements Runnable {
         while (true) {
             try {
                 // Sleep while the player is considering its next move (HARDCODED 500)
-                Thread.currentThread().sleep((int) (500));
+                Thread.sleep(500L);
 
                 System.out.println(DasClient.battleField.toString());
 
@@ -52,7 +51,7 @@ public class PlayerController implements Runnable {
                         targetY = myUnit.getY() - 1;
                         break;
                     case down:
-                        if (myUnit.getY() >= DasClient.battleField.MAP_HEIGHT - 1)
+                        if (myUnit.getY() >= BattleField.MAP_HEIGHT - 1)
                             // The player was at the edge of the map, so he can't move south and there are no units there
                             continue;
 
@@ -68,7 +67,7 @@ public class PlayerController implements Runnable {
                         targetY = myUnit.getY();
                         break;
                     case right:
-                        if (myUnit.getX() >= DasClient.battleField.MAP_WIDTH - 1)
+                        if (myUnit.getX() >= BattleField.MAP_WIDTH - 1)
                             // The player was at the edge of the map, so he can't move east and there are no units there
                             continue;
 
