@@ -1,0 +1,10 @@
+language: java
+
+jdk:
+  - oraclejdk7
+
+script:
+  - ./gradlew assemble
+
+notifications:
+  email: false
