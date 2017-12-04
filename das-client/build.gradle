@@ -10,3 +10,15 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile project(":das-core")
 }
+
+jar {
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    manifest {
+        attributes(
+                'Main-Class': 'nl.vu.ds17800.client.DasClient'
+        )
+    }
+}

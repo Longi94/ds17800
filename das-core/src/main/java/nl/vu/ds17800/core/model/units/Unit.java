@@ -23,7 +23,7 @@ public abstract class Unit implements Serializable {
     private int attackPoints;
 
     // Identifier of the unit
-    private int unitID;
+    private String unitID;
 
     public enum UnitType {
         PLAYER, DRAGON, UNDEFINED
@@ -37,7 +37,7 @@ public abstract class Unit implements Serializable {
      * @param maxHealth is the maximum health of
      *                  this specific unit.
      */
-    public Unit(int unitId, int maxHealth, int attackPoints) {
+    public Unit(String unitId, int maxHealth, int attackPoints) {
 
         // Initialize the max health and health
         hitPoints = maxHitPoints = maxHealth;
@@ -74,7 +74,7 @@ public abstract class Unit implements Serializable {
     /**
      * @return the unique unit identifier.
      */
-    public int getUnitID() {
+    public String getUnitID() {
         return unitID;
     }
 

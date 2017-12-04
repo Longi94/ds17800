@@ -9,4 +9,10 @@ public class Server implements Serializable{
     public int rank; //  id of node described by the object
     public String ipaddr; // no comments :)
     public int serverPort;
+
+    public Server(int rank, String ipaddr, int serverPort) {
+        this.rank = rank;
+        this.ipaddr = ipaddr;
+        this.serverPort = serverPort;
+    }
 }
