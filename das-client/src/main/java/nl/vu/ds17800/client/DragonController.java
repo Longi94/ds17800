@@ -18,7 +18,7 @@ public class DragonController implements Runnable {
         while (true) {
             try {
                 // Sleep while the dragon is considering its next move (HARDCODED 2000)
-                Thread.currentThread().sleep((int) (2000));
+                Thread.sleep(2000L);
 
                 System.out.println(DasClient.battleField.toString());
 
@@ -46,7 +46,8 @@ public class DragonController implements Runnable {
                 }
 
             } catch (Exception e) {
-                System.out.println("IN THREAD ERROR: " + e.getMessage() + " [Stack]: " + e.getStackTrace());
+                System.out.println("IN THREAD ERROR: " + e.getMessage() + " [Stack]:");
+                e.printStackTrace();
             }
         }
 
