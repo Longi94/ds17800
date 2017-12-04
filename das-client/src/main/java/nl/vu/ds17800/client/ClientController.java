@@ -205,7 +205,7 @@ public class ClientController implements IncomingHandler{
     }
 
     @Override
-    public void connectionLost(String ipaddr) {
+    public void connectionLost(String ipaddr, int port) {
         //just reconnect
         reconnectServer();
     }
