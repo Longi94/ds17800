@@ -10,8 +10,7 @@ public class Server implements Serializable{
     public String ipaddr; // no comments :)
     public int serverPort;
 
-    public Server() { }
-    
+
     public Server(int rank, String ipaddr, int serverPort) {
         this.rank = rank;
         this.ipaddr = ipaddr;
