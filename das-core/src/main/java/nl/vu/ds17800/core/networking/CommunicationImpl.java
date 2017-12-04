@@ -5,13 +5,10 @@ import nl.vu.ds17800.core.networking.Entities.Message;
 import nl.vu.ds17800.core.networking.Entities.Response;
 import nl.vu.ds17800.core.networking.Entities.Server;
 
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
