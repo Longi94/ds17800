@@ -24,7 +24,7 @@ public class Player extends Unit {
      * @param x      x coordinate
      * @param y      y coordinate
      */
-    public Player(int unitId, int x, int y) {
+    public Player(String unitId, int x, int y) {
         this(unitId, x, y, new Random());
     }
 
@@ -36,7 +36,7 @@ public class Player extends Unit {
      * @param y      y coordinate
      * @param random the random object, used to make simulation reproducible
      */
-    public Player(int unitId, int x, int y, Random random) {
+    public Player(String unitId, int x, int y, Random random) {
         /* Initialize the hitpoints and attackpoints */
         super(unitId,
                 (int) (random.nextDouble() * (MAX_HITPOINTS - MIN_HITPOINTS) + MIN_HITPOINTS),
