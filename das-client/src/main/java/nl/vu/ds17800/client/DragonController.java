@@ -20,7 +20,7 @@ public class DragonController implements Runnable {
                 // Get current state of my unit
                 Unit myUnit = DasClient.myUnit;
 
-				/* Stop if the dragon runs out of hitpoints */
+                /* Stop if the dragon runs out of hitpoints */
                 if (myUnit.getHitPoints() <= 0)
                     break;
 
