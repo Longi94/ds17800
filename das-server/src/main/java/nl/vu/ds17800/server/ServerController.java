@@ -139,7 +139,7 @@ public class ServerController implements IncomingHandler {
     }
 
     @Override
-    public void connectionLost(String ipaddr) {
+    public void connectionLost(String ipaddr, int port) {
         return;
     }
 }

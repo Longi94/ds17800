@@ -36,7 +36,7 @@ public class ConnectionTester extends Thread {
                         oout.writeObject(testMessage);
                     } catch (IOException e) {
                         // socket is lost
-                        incomingHandler.connectionLost(key);
+                        incomingHandler.connectionLost(entity.socket.getInetAddress().toString(), entity.socket.getPort());
                         socketPool.remove(key);
                     }
                 }
