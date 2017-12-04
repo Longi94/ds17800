@@ -32,8 +32,9 @@ public class CommunicationImpl implements Communication {
         routerThread.start();
     }
 
-    public CommunicationImpl(){
+    public CommunicationImpl(IncomingHandler handler){
         // For Clients
+        incomeHandler = handler;
         socketPool = new ConcurrentHashMap<String, PoolEntity>();
     }
 
