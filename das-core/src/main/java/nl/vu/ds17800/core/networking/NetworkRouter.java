@@ -39,7 +39,8 @@ public class NetworkRouter extends Thread{
             PoolEntity entity = new PoolEntity();
             entity.socket = socket;
             synchronized (socketPool){
-                PoolEntity existance = socketPool.get(socket.getInetAddress());
+                String socketKey = socket.getInetAddress() + ":"+ String.valueOf(socket.getPort());
+                PoolEntity existance = socketPool.get(socketKey);
                 if(existance != null){
                     try {
                         existance.socket.close();
@@ -47,7 +48,7 @@ public class NetworkRouter extends Thread{
                         // already closed; put General Exception because of I am afraid of nullPointers :)
                     }
                 }
-                socketPool.put(socket.getInetAddress().toString(), entity);
+                socketPool.put(socketKey, entity);
             }
             Worker worker = new Worker(messageHandler, entity);
             worker.start();

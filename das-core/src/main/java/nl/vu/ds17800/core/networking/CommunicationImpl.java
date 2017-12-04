@@ -44,20 +44,22 @@ public class CommunicationImpl implements Communication {
         }
     }
 
+    private static String socketKey(Server dest){
+        return dest.ipaddr + ":" + dest.serverPort;
+    }
+
     public Response sendMessageAsync(Message message, Server dest) throws IOException {
         String inetAddress = dest.ipaddr;
-        int DSPORT = dest.serverPort;
+        int port = dest.serverPort;
         PoolEntity entity;
         ObjectOutputStream oout = null;
         String mesID = generateMessageID();
-        entity = socketPool.get(inetAddress);
+        entity = socketPool.get(CommunicationImpl.socketKey(dest));
         if(entity == null){
             entity = new PoolEntity();
-            entity.socket = new Socket(InetAddress.getByName(inetAddress), DSPORT);
-            socketPool.put(inetAddress, entity);
+            entity.socket = new Socket(InetAddress.getByName(inetAddress), port);
+            socketPool.put(CommunicationImpl.socketKey(dest), entity);
             oout = new ObjectOutputStream(entity.socket.getOutputStream());
-            Worker worker = new Worker(incomeHandler, entity);
-            worker.start();
         }
         message.put("__communicationType", "__request");
         message.put("__communicationID", mesID);
