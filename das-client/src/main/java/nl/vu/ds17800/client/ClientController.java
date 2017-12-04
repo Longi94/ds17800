@@ -9,6 +9,7 @@ import nl.vu.ds17800.core.networking.response.Server;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
@@ -22,12 +23,19 @@ public class ClientController implements IncomingHandler{
     private ArrayList<Server> servers;
     private Server myServer;
 
+    private static final int SND_MSG_TIMEOUT = 2000;
+
     private CommunicationImpl communication;
 
 
     public ClientController() {
-        this.communication = new CommunicationImpl();
-        this.communication.init(this);
+        this.servers = new ArrayList<Server>();
+        servers.add(new Server(0, "localhost", 8080));
+        servers.add(new Server(0, "localghost", 8090));
+        servers.add(new Server(0, "google.com", 8060));
+        servers.add(new Server(0, "localhost", 7060));
+        this.communication = new CommunicationImpl(this);
+
     }
 
     /**
@@ -35,38 +43,33 @@ public class ClientController implements IncomingHandler{
      * @return server descriptor
      */
     private Server getServerToConnect() {
+        System.out.println("Pinging servers...");
 
         // Using TreeMap to have already ordered list of servers (by ping)
-        TreeMap<Integer,Server> pingServMap = new TreeMap<Integer,String>();
+        TreeMap<Long,Server> pingServMap = new TreeMap<Long,Server>();
 
         for(Server srv : servers) {
+            long pingTime;
 
-            String pingTime = "";
-
-            String pingStringSmd = "ping " + srv.ipaddr;
-
-            Runtime runtime = Runtime.getRuntime();
             try {
-                Process process = runtime.exec(pingStringSmd);
-                BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-                String inputLine = in.readLine();
-                while ((inputLine != null)) {
-                    if (inputLine.length() > 0 && inputLine.contains("time")) {
-                        pingTime = inputLine.substring(inputLine.indexOf("time"));
-                        break;
-                    }
-                    inputLine = in.readLine();
+                long startPing = System.currentTimeMillis();
+                boolean serverReachable = InetAddress.getByName(srv.ipaddr).isReachable(SND_MSG_TIMEOUT);
+                long endPing = System.currentTimeMillis();
+                if(serverReachable) {
+                    pingTime = endPing - startPing;
+                    System.out.println("server: " + srv.ipaddr + " | port: " + srv.serverPort + " | ping: " + pingTime);
+                } else {
+                    System.out.println("server: " + srv.ipaddr + " | port: " + srv.serverPort + " | not reachable");
+                    continue;
                 }
-                System.out.println("Server: " + srv.ipaddr + " | ping: " + pingTime);
+
 
             } catch (Exception e) {
-                System.out.println("Error while pinging server: " + srv.ipaddr);
+                System.out.println("Error while pinging server: " + srv.ipaddr + ", details: " + e.getMessage());
                 continue;
             }
 
-            Integer pingVal = Integer.parseInt(pingTime);
-            pingServMap.put(pingVal, srv);
+            pingServMap.put(pingTime, srv);
 
         }
 
@@ -93,7 +96,8 @@ public class ClientController implements IncomingHandler{
 
         Message response;
         try {
-            response = communication.sendMessage(message, serverToConnect);
+            System.out.println("Trying to connect server: " + serverToConnect.ipaddr + ", port: " + serverToConnect.serverPort);
+            response = communication.sendMessage(message, serverToConnect, SND_MSG_TIMEOUT);
         } catch (Exception e) {
             System.out.println("Could not connect to server: " + e.getMessage());
             return null;
@@ -106,7 +110,7 @@ public class ClientController implements IncomingHandler{
      * Method to perform reconnection to other server if current is down or sth
      * @return success flag
      */
-    public Boolean reconnectServer() {
+    public boolean reconnectServer() {
         Message serverResponse = connectServer(DasClient.myUnit.getUnitID());
 
         if(serverResponse == null) return false;
@@ -124,7 +128,7 @@ public class ClientController implements IncomingHandler{
      * After successfull connection battleField and player unit are being set
      * @return succes flag
      */
-    public Boolean initialiseConnection() {
+    public boolean initialiseConnection() {
         Message serverResponse = connectServer(null);
 
         if(serverResponse == null) return false;
@@ -142,7 +146,7 @@ public class ClientController implements IncomingHandler{
      * @param actionWrapper - wrapped details of action performed by player
      * @return success flag
      */
-    public Boolean sendUnitAction(ActionWrapper actionWrapper) {
+    public boolean sendUnitAction(ActionWrapper actionWrapper) {
 
         MessageRequest request = actionWrapper.actionType;
         Message message = new Message();
@@ -172,7 +176,7 @@ public class ClientController implements IncomingHandler{
 
         try {
             // @johannes - what kind of ACK I will receive? how should I handle it?
-            communication.sendMessage(message, myServer);
+            communication.sendMessage(message, myServer, SND_MSG_TIMEOUT);
         } catch (Exception e) {
             System.out.println("Could not connect to server: " + e.getMessage());
             System.out.println("Trying to reconnect...");
@@ -203,8 +207,12 @@ public class ClientController implements IncomingHandler{
                 System.out.println("Unhandled message request from server");
         }
 
+        return null;
+    }
 
-        //what should I return?
-        return new Message();
+    @Override
+    public void connectionLost(String ipaddr) {
+        //just reconnect
+        reconnectServer();
     }
 }
