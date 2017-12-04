@@ -8,4 +8,10 @@ package nl.vu.ds17800.core.model;
  */
 public enum MessageRequest {
     spawnUnit, moveUnit, putUnit, removeUnit, dealDamage, healDamage,
+
+    clientConnect,
+    clientDisconnect,
+
+    serverConnect,
+    serverDisconnect
 }

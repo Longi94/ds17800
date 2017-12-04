@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * The actual battlefield where the fighting takes place.
@@ -19,10 +20,6 @@ public class BattleField implements Serializable {
     /* The array of units */
     private Unit[][] map;
 
-    /* The last id that was assigned to an unit. This variable is used to
-     * enforce that each unit has its own unique id.
-     */
-    private int lastUnitID = 0;
     private ArrayList<Unit> units = new ArrayList<>();
 
     /**
@@ -40,6 +37,38 @@ public class BattleField implements Serializable {
      */
     public BattleField(int width, int height) {
         map = new Unit[width][height];
+    }
+
+    /**
+     * Get random free x y position in the battle field
+     * @return [x,y] or otherwise null if no free position was found
+     */
+    public int[] getRandomFreePosition() {
+        int[] pos;
+
+        int x, y, attempt = 0;
+        do {
+            x = (int) (Math.random() * BattleField.MAP_WIDTH);
+            y = (int) (Math.random() * BattleField.MAP_HEIGHT);
+            attempt++;
+        } while (getUnit(x, y) != null && attempt < 10);
+
+        if (getUnit(x,y) != null) {
+            return null;
+        }
+
+        pos = new int[]{x, y};
+
+        return pos;
+    }
+
+    public Unit findUnitById(String id) {
+        for (Unit u : units) {
+            if (id.equals(u.getUnitID())) {
+                return u;
+            }
+        }
+        return null;
     }
 
     /**
@@ -151,8 +180,8 @@ public class BattleField implements Serializable {
      *
      * @return int: a new unique unit ID.
      */
-    public int getNewUnitID() {
-        return ++lastUnitID;
+    public String getNewUnitID() {
+        return UUID.randomUUID().toString();
     }
 
     /**
