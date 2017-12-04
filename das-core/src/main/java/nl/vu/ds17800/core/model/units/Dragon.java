@@ -25,7 +25,7 @@ public class Dragon extends Unit {
      * @param x      x coordinate
      * @param y      y coordinate
      */
-    public Dragon(int unitId, int x, int y) {
+    public Dragon(String unitId, int x, int y) {
         this(unitId, x, y, new Random());
     }
 
@@ -37,7 +37,7 @@ public class Dragon extends Unit {
      * @param y      y coordinate
      * @param random the random object, used to make simulation reproducible
      */
-    public Dragon(int unitId, int x, int y, Random random) {
+    public Dragon(String unitId, int x, int y, Random random) {
         /* Spawn the dragon with a random number of hitpoints between
          * 50..100 and 5..20 attackpoints. */
         super(unitId,

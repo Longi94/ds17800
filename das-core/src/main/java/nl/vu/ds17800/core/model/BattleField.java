@@ -307,7 +307,7 @@ public class BattleField implements Serializable {
         }
 
         for (int i = 0; i < units.size(); i++) {
-            builder.append(String.format("%2d | ", i)).append(units.get(i)).append('\n');
+            builder.append(String.format("%2s | ", i)).append(units.get(i)).append('\n');
         }
 
         return builder.toString();
