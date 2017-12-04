@@ -1,8 +1,9 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.response.Message;
-import nl.vu.ds17800.core.networking.response.Response;
-import nl.vu.ds17800.core.networking.response.Server;
+import nl.vu.ds17800.core.networking.Entities.Client;
+import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Entities.Response;
+import nl.vu.ds17800.core.networking.Entities.Server;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -23,6 +24,7 @@ public class CommunicationImpl implements Communication {
     private final String    HEARTBEATING = "heartbeating";
     private IncomingHandler incomeHandler;
     private Map<String, PoolEntity> socketPool;
+    private static Integer mesID;
 
     public CommunicationImpl(IncomingHandler handler, Server server){
         // For Servers
@@ -38,11 +40,19 @@ public class CommunicationImpl implements Communication {
         socketPool = new ConcurrentHashMap<String, PoolEntity>();
     }
 
-    public Response sendMessageAsync(Message message, Server dest) throws IOException, ClassNotFoundException, InterruptedException, NoSuchAlgorithmException {
+    private String generateMessageID(){
+        synchronized (mesID){
+            mesID = (mesID + 1) % Integer.MAX_VALUE;
+            return String.valueOf(mesID);
+        }
+    }
+
+    public Response sendMessageAsync(Message message, Server dest) throws IOException {
         String inetAddress = dest.ipaddr;
         int DSPORT = dest.serverPort;
         PoolEntity entity;
         ObjectOutputStream oout = null;
+        String mesID = generateMessageID();
         entity = socketPool.get(inetAddress);
         if(entity == null){
             entity = new PoolEntity();
@@ -53,19 +63,33 @@ public class CommunicationImpl implements Communication {
             worker.start();
         }
         message.put("__communicationType", "__request");
-        KeyGenerator keyGen;
-        keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(256); // for example
-        SecretKey secretKey = keyGen.generateKey();
-        String keyString = secretKey.getEncoded().toString();
-        message.put("__communicationID", keyString);
+        message.put("__communicationID", mesID);
         oout.writeObject(message);
-        return new Response(keyString, entity.responseBuffer);
+        return new Response(mesID, entity.responseBuffer);
     }
 
-    public Message sendMessage(Message message, Server dest, int timeout) throws ClassNotFoundException, NoSuchAlgorithmException, InterruptedException, IOException {
+    public Message sendMessage(Message message, Server dest, int timeout) throws InterruptedException, IOException {
         return sendMessageAsync(message, dest).getResponse(timeout);
-    };
+    }
+
+    public Response sendMessageAsync(Message message, Client dest) throws IOException {
+        String inetAddress = dest.ipaddr;
+        PoolEntity entity;
+        ObjectOutputStream oout = null;
+        String mesID = generateMessageID();
+        entity = socketPool.get(inetAddress);
+        if(entity == null){
+            throw new IOException();
+        }
+        message.put("__communicationType", "__request");
+        message.put("__communicationID", mesID);
+        oout.writeObject(message);
+        return new Response(mesID, entity.responseBuffer);
+    }
+
+    public Message sendMessage(Message message, Client dest, int timeout) throws InterruptedException, IOException{
+        return sendMessageAsync(message, dest).getResponse(timeout);
+    }
 
     public List<Server> getServers(){
         return new ArrayList<Server>();

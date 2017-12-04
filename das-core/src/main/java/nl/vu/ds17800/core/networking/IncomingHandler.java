@@ -1,6 +1,6 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.response.Message;
+import nl.vu.ds17800.core.networking.Entities.Message;
 
 /**
  * interface describing regular behaviour of object which will be used

@@ -1,9 +1,7 @@
-package nl.vu.ds17800.core.networking.response;
+package nl.vu.ds17800.core.networking.Entities;
 
 import java.io.Serializable;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Objects;
 
 public class Message extends HashMap<String, Object> implements Serializable {
     /**

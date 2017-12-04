@@ -1,6 +1,6 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.response.SerMessage;
+import nl.vu.ds17800.core.networking.Entities.SerMessage;
 
 /**
  * Created by hacku on 11/21/17.

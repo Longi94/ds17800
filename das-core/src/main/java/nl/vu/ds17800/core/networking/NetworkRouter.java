@@ -1,6 +1,6 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.response.Server;
+import nl.vu.ds17800.core.networking.Entities.Server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
