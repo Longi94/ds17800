@@ -18,7 +18,6 @@ public class ClientController implements IncomingHandler{
     /**
      * List of hardcoded servers
      */
-    private ArrayList<Server> servers;
     private Server myServer;
 
     private static final int SND_MSG_TIMEOUT = 2000;
@@ -27,11 +26,6 @@ public class ClientController implements IncomingHandler{
 
 
     public ClientController() {
-        this.servers = new ArrayList<Server>();
-        servers.add(new Server(0, "localhost", 8080));
-        servers.add(new Server(0, "localghost", 8090));
-        servers.add(new Server(0, "google.com", 8060));
-        servers.add(new Server(0, "localhost", 7060));
         this.communication = new CommunicationImpl(this);
 
     }
@@ -46,7 +40,7 @@ public class ClientController implements IncomingHandler{
         // Using TreeMap to have already ordered list of servers (by ping)
         TreeMap<Long,Server> pingServMap = new TreeMap<Long,Server>();
 
-        for(Server srv : servers) {
+        for(Server srv : communication.getServers()) {
             long pingTime;
 
             try {
