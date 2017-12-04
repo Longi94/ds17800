@@ -17,6 +17,8 @@ public class DragonController implements Runnable {
                 // Sleep while the dragon is considering its next move (HARDCODED 2000)
                 Thread.currentThread().sleep((int) (2000));
 
+                System.out.println(DasClient.battleField.toString());
+
                 // Get current state of my unit
                 Unit myUnit = DasClient.myUnit;
 

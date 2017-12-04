@@ -24,6 +24,8 @@ public class PlayerController implements Runnable {
                 // Sleep while the player is considering its next move (HARDCODED 500)
                 Thread.currentThread().sleep((int) (500));
 
+                System.out.println(DasClient.battleField.toString());
+
                 // Get current state of my unit
                 Unit myUnit = DasClient.myUnit;
 
