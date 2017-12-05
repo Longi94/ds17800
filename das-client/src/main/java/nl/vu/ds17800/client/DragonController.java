@@ -48,6 +48,7 @@ public class DragonController implements Runnable {
             } catch (Exception e) {
                 System.out.println("IN THREAD ERROR: " + e.getMessage() + " [Stack]:");
                 e.printStackTrace();
+                break;
             }
         }
 
