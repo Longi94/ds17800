@@ -183,7 +183,7 @@ public class BattleField implements Serializable {
                 return; // There was no unit here to remove
             }
             map[x][y] = null;
-            units.remove(unitToRemove);
+            unitToRemove.setHitPoints(0);
         }
     }
 
@@ -298,7 +298,7 @@ public class BattleField implements Serializable {
 
         for (Unit unit : units) {
             int d = Math.abs(x - unit.getX()) + Math.abs(y - unit.getY());
-            if (unit.getType() == type && d > 0 && d <= distance) {
+            if (unit.getHitPoints() > 0 && unit.getType() == type && d > 0 && d <= distance) {
                 players.add(unit);
             }
         }

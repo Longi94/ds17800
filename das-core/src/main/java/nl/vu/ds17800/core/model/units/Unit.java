@@ -110,6 +110,10 @@ public abstract class Unit implements Serializable {
         return hitPoints;
     }
 
+    public void setHitPoints(int hitPoints) {
+        this.hitPoints = hitPoints;
+    }
+
     /**
      * @return the attack points
      */
