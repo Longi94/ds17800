@@ -46,7 +46,9 @@ public class Worker extends Thread{
 
                 message.put(Communication.KEY_COMM_ID, messageKey);
                 message.put(Communication.KEY_COMM_TYPE, "__response");
-                connectionEntity.outputStream.writeObject(message);
+                synchronized (connectionEntity.outputStream){
+                    connectionEntity.outputStream.writeObject(message);
+                }
             } catch (IOException e) {
                 System.out.println("Error: " + e.getMessage());
                 return;
