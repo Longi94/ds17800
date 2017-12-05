@@ -90,7 +90,9 @@ public class PlayerController implements Runnable {
                             break;
                         case PLAYER:
                             // There is a player in the square, attempt a healing
-                            actionWrapper = new ActionWrapper(healDamage, null, targetX, targetY, myUnit.getAttackPoints());
+                            if(adjacentUnit.getHitPoints() < adjacentUnit.getMaxHitPoints()/2) {
+                                actionWrapper = new ActionWrapper(healDamage, null, targetX, targetY, myUnit.getAttackPoints());
+                            }
                             break;
                         case DRAGON:
                             // There is a dragon in the square, attempt a dragon slaying
