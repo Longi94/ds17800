@@ -36,12 +36,16 @@ public class CommunicationImpl implements Communication {
         socketPool = new ConcurrentHashMap<String, PoolEntity>();
         NetworkRouter routerThread = new NetworkRouter(incomeHandler, socketPool, server);
         routerThread.start();
+        ConnectionTester testerThread = new ConnectionTester(socketPool, incomeHandler);
+        testerThread.start();
     }
 
     public CommunicationImpl(IncomingHandler handler){
         // For Clients
         incomeHandler = handler;
         socketPool = new ConcurrentHashMap<String, PoolEntity>();
+        ConnectionTester testerThread = new ConnectionTester(socketPool, incomeHandler);
+        testerThread.start();
     }
 
     private String generateMessageID(){

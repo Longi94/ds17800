@@ -13,6 +13,7 @@ public class ConnectionTester extends Thread {
     private Map<String, PoolEntity> socketPool;
     private final String HEARTBEATING = "heartbeating";
     private IncomingHandler incomingHandler;
+    private int period = 2000;
 
     public ConnectionTester(Map<String, PoolEntity> pool, IncomingHandler handler){
         incomingHandler = handler;
@@ -39,7 +40,7 @@ public class ConnectionTester extends Thread {
                 }
             }
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(period);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

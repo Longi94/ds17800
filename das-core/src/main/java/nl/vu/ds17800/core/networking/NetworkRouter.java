@@ -20,8 +20,6 @@ public class NetworkRouter extends Thread{
         socketPool = sockets;
         messageHandler = incomingHandler;
         serverDescriptor = server;
-        testerThread = new ConnectionTester(socketPool, incomingHandler);
-        testerThread.start();
     }
 
     public void run() {
