@@ -2,6 +2,7 @@ package nl.vu.ds17800.client;
 
 import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.MessageRequest;
+import nl.vu.ds17800.core.model.units.Unit;
 import nl.vu.ds17800.core.networking.CommunicationImpl;
 import nl.vu.ds17800.core.networking.Entities.Message;
 import nl.vu.ds17800.core.networking.Entities.Server;
@@ -99,7 +100,7 @@ public class ClientController implements IncomingHandler{
         try {
             System.out.println("Trying to connect server: " + serverToConnect.ipaddr + ", port: " + serverToConnect.serverPort);
             response = communication.sendMessage(message, serverToConnect, SND_MSG_TIMEOUT);
-            System.out.println("Connected!");
+
             this.myServer = serverToConnect;
         } catch (Exception e) {
             System.out.println("Could not connect to server: " + e.getMessage());
@@ -114,8 +115,15 @@ public class ClientController implements IncomingHandler{
      * @return success flag
      */
     public boolean reconnectServer() {
-        Message serverResponse = connectServer(DasClient.myUnit.getUnitID(), null);
+        String unitType;
+        if(DasClient.myUnit.getType() == Unit.UnitType.DRAGON) {
+            unitType = "dragon";
+        } else {
+            unitType = "player";
+        }
 
+        Message serverResponse = connectServer(DasClient.myUnit.getUnitID(), unitType);
+        System.out.println("MY UNIT ID (received from server): " + serverResponse.get("id"));
         if(serverResponse == null) return false;
 
         String myUnitId = DasClient.myUnit.getUnitID();
@@ -135,7 +143,7 @@ public class ClientController implements IncomingHandler{
         Message serverResponse = connectServer(null, unitType);
 
         if(serverResponse == null) return false;
-
+        System.out.println("MY UNIT ID (received from server): " + serverResponse.get("id"));
         String myUnitId = (String) serverResponse.get("id");
 
         //refresh battleField and myUnit to current state received by server
