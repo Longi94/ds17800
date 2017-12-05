@@ -27,17 +27,14 @@ public class ConnectionTester extends Thread {
                 Set<String> keys = socketPool.keySet();
                 for(String key : keys){
                     PoolEntity entity = socketPool.get(key);
-                    ObjectOutputStream oout = null;
-                    ObjectInputStream oin = null;
                     Message testMessage = new Message();
                     testMessage.put("__communicationType", HEARTBEATING);
                     try {
-                        oout = new ObjectOutputStream(entity.socket.getOutputStream());
-                        oout.writeObject(testMessage);
+                        entity.outputStream.writeObject(testMessage);
                     } catch (IOException e) {
                         // socket is lost
-                        incomingHandler.connectionLost(entity.socket.getInetAddress().toString(), entity.socket.getPort());
                         socketPool.remove(key);
+                        incomingHandler.connectionLost(entity.socket.getInetAddress().toString(), entity.socket.getPort());
                     }
                 }
             }
