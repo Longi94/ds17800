@@ -83,6 +83,8 @@ public class ClientController implements IncomingHandler{
         }
 
         if(!pingServMap.isEmpty()) {
+
+
             return pingServMap.get(pingServMap.firstKey());
         } else {
             System.out.println("Could not find any server to connect.");
@@ -197,6 +199,7 @@ public class ClientController implements IncomingHandler{
         }
 
         try {
+
             System.out.println("Client: sending message...");
             communication.sendMessage(message, myServer, SND_MSG_TIMEOUT);
             System.out.println("Client: message sent successfully");

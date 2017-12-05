@@ -92,6 +92,7 @@ public class ServerController implements IncomingHandler {
             try {
                 resp = r.getResponse(500);
             } catch (InterruptedException e) {
+
                 System.out.println("Timeout! Assume that it's accepted!");
                 e.printStackTrace();
             }
@@ -147,6 +148,8 @@ public class ServerController implements IncomingHandler {
                     // this is a reconnecting client that already has a Unit
                     player = bf.findUnitById((String) m.get("id"));
                 }
+
+
 
                 if (player == null) {
                     // this is a new client that needs a Player Unit associated
@@ -333,6 +336,11 @@ public class ServerController implements IncomingHandler {
                             return null;
                     }
                 }
+          case clientListSize:
+            reply = new Message();
+            reply.put("amount", this.connectedClients.size());
+
+            return reply;
             default:
                 return Message.ack(m);
         }
