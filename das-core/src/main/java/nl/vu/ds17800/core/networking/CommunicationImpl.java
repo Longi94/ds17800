@@ -65,10 +65,12 @@ public class CommunicationImpl implements Communication {
             entity = new PoolEntity();
             entity.socket = new Socket(InetAddress.getByName(inetAddress), port);
             socketPool.put(CommunicationImpl.socketKey(dest), entity);
-            oout = new ObjectOutputStream(entity.socket.getOutputStream());
             Worker worker = new Worker(incomeHandler, entity);
             worker.start();
         }
+
+        oout = new ObjectOutputStream(entity.socket.getOutputStream());
+
         message.put("__communicationType", "__request");
         message.put("__communicationID", mesID);
         oout.writeObject(message);
