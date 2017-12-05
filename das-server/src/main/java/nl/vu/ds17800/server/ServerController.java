@@ -15,10 +15,7 @@ import nl.vu.ds17800.core.networking.IncomingHandler;
 import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
 import static nl.vu.ds17800.core.model.RequestStage.ask;
@@ -36,14 +33,14 @@ public class ServerController implements IncomingHandler {
     private final List<Server> connectedServers;
 
     // clients connected to this server
-    private final List<Client> connectedClients;
+    private final Set<String> connectedClients;
 
     // here we reserve spots while waiting for a commit
     private final long[][] reservedSpot;
 
     ServerController(BattleField bf) {
         this.connectedServers = Collections.synchronizedList(new ArrayList<Server>());
-        this.connectedClients = Collections.synchronizedList(new ArrayList<Client>());
+        this.connectedClients = Collections.synchronizedSet(new HashSet<String>());
         reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
     }
 
@@ -112,9 +109,11 @@ public class ServerController implements IncomingHandler {
     private void broadcastClients(Message m) {
         m = new Message(m);
         m.remove("requestStage");
-        for (Client c : connectedClients) {
+        for (String c : connectedClients) {
             try {
-                comm.sendMessageAsync(m, c);
+                Client client = new Client();
+                client.ipaddr = c;
+                comm.sendMessageAsync(m, client);
             } catch (IOException e) {
                 System.out.println("Unable to send message to client");
             }
@@ -128,9 +127,6 @@ public class ServerController implements IncomingHandler {
             case clientConnect:
                 // This server got a new client
                 System.out.println("New client connected!");
-
-                Client client = new Client();
-                client.ipaddr = connectionEntity.socket.getInetAddress().toString() + ":" + connectionEntity.socket.getPort();
 
                 Unit player = null;
                 if (m.get("id") != null) {
@@ -183,7 +179,7 @@ public class ServerController implements IncomingHandler {
                     broadcastClients(msgSpawnUnit);
                 }
 
-                connectedClients.add(client);
+                connectedClients.add(connectionEntity.socket.getInetAddress().toString() + ":" + connectionEntity.socket.getPort());
 
                 reply = new Message();
                 reply.put("request", clientConnect);
@@ -302,17 +298,7 @@ public class ServerController implements IncomingHandler {
             }
         }
 
-        ListIterator<Client> cit = connectedClients.listIterator();
-
-        Client client;
-        while (cit.hasNext()) {
-            client = cit.next();
-            if (client.ipaddr.equals(ip)) {
-                cit.remove();
-                return;
-            }
-        }
-
+        connectedClients.remove(ip);
     }
 
     public void connectServer(Server s) throws IOException, InterruptedException {
