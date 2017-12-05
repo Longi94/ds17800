@@ -11,12 +11,19 @@ import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
 
 public class ClientController implements IncomingHandler{
+
+    // structure that keeps servers and amount of connected clients
+    public class ServerDetailsWrapper {
+        public int clientsConnected;
+        public Server server;
+    }
 
     /**
      * List of hardcoded servers
@@ -48,10 +55,16 @@ public class ClientController implements IncomingHandler{
         System.out.println("Pinging servers...");
 
         // Using TreeMap to have already ordered list of servers (by ping)
-        TreeMap<Long,Server> pingServMap = new TreeMap<Long,Server>();
+        TreeMap<Long,ServerDetailsWrapper> pingServMap = new TreeMap<Long,ServerDetailsWrapper>();
+
+        // Amount of clients in total
+        int clientsTotal = 0;
+        // Threshold value of clients per server
+        int clientsThreshold = 0;
 
         for(Server srv : servers) {
             long pingTime;
+            int srvClientListSize;
 
             try {
                 long startPing = System.currentTimeMillis();
@@ -66,7 +79,14 @@ public class ClientController implements IncomingHandler{
                 long endPing = System.currentTimeMillis();
                 if(serverReachable) {
                     pingTime = endPing - startPing;
-                    System.out.println("server: " + srv.ipaddr + " | port: " + srv.serverPort + " | ping: " + pingTime);
+
+                    Message message = new Message();
+                    message.put("request", clientListSize);
+                    Message response = communication.sendMessage(message, srv, SND_MSG_TIMEOUT);
+                    srvClientListSize = (int)response.get("amount");
+
+                    System.out.println("server: " + srv.ipaddr + " | port: " + srv.serverPort + " | ping: " + pingTime + " | connected clients: " + srvClientListSize);
+                    clientsTotal += srvClientListSize;
                 } else {
                     System.out.println("server: " + srv.ipaddr + " | port: " + srv.serverPort + " | not reachable");
                     continue;
@@ -78,18 +98,26 @@ public class ClientController implements IncomingHandler{
                 continue;
             }
 
-            pingServMap.put(pingTime, srv);
+            ServerDetailsWrapper sdw = new ServerDetailsWrapper();
+            sdw.clientsConnected = srvClientListSize;
+            sdw.server = srv;
+
+            pingServMap.put(pingTime, sdw);
 
         }
+
+        clientsThreshold = (int) Math.ceil( clientsTotal / (float) pingServMap.size());
 
         if(!pingServMap.isEmpty()) {
-
-
-            return pingServMap.get(pingServMap.firstKey());
-        } else {
-            System.out.println("Could not find any server to connect.");
-            return null;
+            // choose server by ping (TreeMap) that has less clients connected than clientThreshold value
+            for(ServerDetailsWrapper srvWrapper : pingServMap.values()) {
+                if(srvWrapper.clientsConnected <= clientsThreshold) {
+                    return srvWrapper.server;
+                }
+            }
         }
+        System.out.println("Could not find any server to connect.");
+        return null;
     }
 
     /**
