@@ -7,6 +7,7 @@ import nl.vu.ds17800.core.model.units.Dragon;
 import nl.vu.ds17800.core.model.units.Player;
 import nl.vu.ds17800.core.model.units.Unit;
 import nl.vu.ds17800.core.networking.Communication;
+import nl.vu.ds17800.core.networking.CommunicationImpl;
 import nl.vu.ds17800.core.networking.Entities.Client;
 import nl.vu.ds17800.core.networking.Entities.Message;
 import nl.vu.ds17800.core.networking.Entities.Server;
@@ -76,7 +77,9 @@ public class ServerController implements IncomingHandler {
         m.put("requestStage", ask);
 
         for (Server s : connectedServers) {
-            System.out.println("Broadcasting to server " + s);
+            if (CommunicationImpl.DEBUG_LOG_ENABLED) {
+                System.out.println("Broadcasting to server " + s);
+            }
             try {
                 Message resp = comm.sendMessage(m, s, 500);
 

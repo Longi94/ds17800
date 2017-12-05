@@ -28,6 +28,8 @@ public class DragonController implements Runnable {
 
                 System.out.println(DasClient.battleField.toString());
 
+                System.out.println("ME | " + DasClient.myUnit);
+
                 // Get current state of my unit
                 Unit myUnit = DasClient.myUnit;
 

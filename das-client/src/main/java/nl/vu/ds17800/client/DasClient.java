@@ -2,6 +2,7 @@ package nl.vu.ds17800.client;
 
 import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.units.Unit;
+import nl.vu.ds17800.core.networking.CommunicationImpl;
 
 
 /**
@@ -18,9 +19,11 @@ public class DasClient {
     public static void main(String[] args) {
 
         if (args.length < 1){
-            System.out.println("Input: \"dragon\" or \"player\" to run the game");
+            System.out.println("Input: <dragon/player> [preferred_server] [debug]");
             return;
         }
+
+        CommunicationImpl.DEBUG_LOG_ENABLED = args.length >= 3;
 
         String unitType = args[0];
         int preferredServer = args.length >= 2 ? Integer.parseInt(args[1]) : -1;

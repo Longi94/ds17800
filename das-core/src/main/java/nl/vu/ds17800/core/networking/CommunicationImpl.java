@@ -25,6 +25,8 @@ public class CommunicationImpl implements Communication {
      */
     public static final int LISTEN_PORTRANGE_START = 10100;
 
+    public static boolean DEBUG_LOG_ENABLED = false;
+
     private final String    HEARTBEATING = "heartbeating";
     private IncomingHandler incomeHandler;
     private Map<String, PoolEntity> socketPool;
@@ -60,7 +62,9 @@ public class CommunicationImpl implements Communication {
     }
 
     public Response sendMessageAsync(Message message, Server dest) throws IOException {
-        System.out.println("-> " + message);
+        if (DEBUG_LOG_ENABLED) {
+            System.out.println("-> " + message);
+        }
         String inetAddress = dest.ipaddr;
         int port = dest.serverPort;
         PoolEntity entity;
@@ -88,7 +92,9 @@ public class CommunicationImpl implements Communication {
     }
 
     public Response sendMessageAsync(Message message, Client dest) throws IOException {
-        System.out.println("-> " + message);
+        if (DEBUG_LOG_ENABLED) {
+            System.out.println("-> " + message);
+        }
         String inetAddress = dest.ipaddr;
         PoolEntity entity;
         String mesID = generateMessageID();

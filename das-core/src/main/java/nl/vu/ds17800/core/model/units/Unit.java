@@ -127,7 +127,7 @@ public abstract class Unit implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("ID:%4s | TYPE:%10s | COORDS:(%2d,%2d) | HEALTH:%3d/%3d | ATTACK:%3d",
+        return String.format("ID:%4s | TYPE:%6s | (%2d,%2d) | HP:%3d/%3d | A:%3d",
                 this.unitID,
                 getType().toString(),
                 this.x,
