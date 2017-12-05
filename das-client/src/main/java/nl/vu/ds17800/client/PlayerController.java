@@ -102,7 +102,10 @@ public class PlayerController implements Runnable {
 
                 }
 
-                boolean success = DasClient.clientController.sendUnitAction(actionWrapper);
+                boolean success = true;
+                if(actionWrapper != null) {
+                    success = DasClient.clientController.sendUnitAction(actionWrapper);
+                }
 
                 if(!success) {
                     System.out.println("CONNECTION LOST, RECONNECTION FAILED");
