@@ -28,7 +28,7 @@ public class NetworkRouter extends Thread{
         try {
             ssocket = new ServerSocket(DSPORT);
         } catch (IOException e) {
-            System.err.println("Error! Port may be in useo");
+            System.err.println("Error! Port may be in use");
             System.exit(1);
         }
         System.out.println("Listening for incoming connections on: " + DSPORT);

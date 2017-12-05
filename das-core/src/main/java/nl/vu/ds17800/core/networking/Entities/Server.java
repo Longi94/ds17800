@@ -30,4 +30,8 @@ public class Server implements Serializable{
                 s.ipaddr == this.ipaddr &&
                 s.rank == this.rank;
     }
+
+    public String toString() {
+        return  this.ipaddr + ":" + this.serverPort;
+    }
 }
