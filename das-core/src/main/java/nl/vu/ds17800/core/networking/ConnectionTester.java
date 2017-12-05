@@ -3,8 +3,6 @@ package nl.vu.ds17800.core.networking;
 import nl.vu.ds17800.core.networking.Entities.Message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,7 +26,7 @@ public class ConnectionTester extends Thread {
                 for(String key : keys){
                     PoolEntity entity = socketPool.get(key);
                     Message testMessage = new Message();
-                    testMessage.put("__communicationType", HEARTBEATING);
+                    testMessage.put(Communication.KEY_COMM_TYPE, HEARTBEATING);
                     try {
                         entity.outputStream.writeObject(testMessage);
                     } catch (IOException e) {

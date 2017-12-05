@@ -1,6 +1,7 @@
 package nl.vu.ds17800.core.networking.Entities;
 
-import java.io.IOException;
+import nl.vu.ds17800.core.networking.Communication;
+
 import java.util.List;
 
 public class Response {
@@ -18,7 +19,7 @@ public class Response {
             while(true){
                 synchronized (responseBuffer){
                     for(Message message: responseBuffer){
-                        if(((String)message.get("__communicationID")).equals(messageKey)){
+                        if(((String)message.get(Communication.KEY_COMM_ID)).equals(messageKey)){
                             responseBuffer.remove(message);
                             return message;
                         }

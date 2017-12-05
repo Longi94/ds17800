@@ -6,7 +6,6 @@ import nl.vu.ds17800.core.networking.Entities.Response;
 import nl.vu.ds17800.core.networking.Entities.Server;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 /**
@@ -23,6 +22,9 @@ public interface Communication {
      * @return list of master nodes, asked from middleware
      */
     public List<Server> getServers();
+
+    String KEY_COMM_ID = "__communicationID";
+    String KEY_COMM_TYPE = "__communicationType";
 
     /** For Servers
      * Tries to be registered as new master node
