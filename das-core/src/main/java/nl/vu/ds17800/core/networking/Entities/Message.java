@@ -14,4 +14,13 @@ public class Message extends HashMap<String, Object> implements Serializable {
         super();
         this.put("timestamp", System.currentTimeMillis());
     }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Message:");
+        for (String k : this.keySet()) {
+            sb.append("  " + k + ": " + this.get(k));
+        }
+        return sb.toString();
+    }
 }

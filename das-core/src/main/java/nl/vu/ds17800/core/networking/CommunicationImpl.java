@@ -66,10 +66,13 @@ public class CommunicationImpl implements Communication {
             entity.socket = new Socket(InetAddress.getByName(inetAddress), port);
             socketPool.put(CommunicationImpl.socketKey(dest), entity);
             oout = new ObjectOutputStream(entity.socket.getOutputStream());
+            Worker worker = new Worker(incomeHandler, entity);
+            worker.start();
         }
         message.put("__communicationType", "__request");
         message.put("__communicationID", mesID);
         oout.writeObject(message);
+        System.out.println("Sending message to server " + dest + " " + message);
         return new Response(mesID, entity.responseBuffer);
     }
 
@@ -99,7 +102,7 @@ public class CommunicationImpl implements Communication {
     public List<Server> getServers(){
         List<Server> servers = new ArrayList<Server>();
         Server s;
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 2; i++) {
             s = new Server();
             s.serverPort = LISTEN_PORTRANGE_START + i;
             s.ipaddr = "localhost";
