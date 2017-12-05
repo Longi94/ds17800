@@ -66,6 +66,7 @@ public class ServerController implements IncomingHandler {
         List<Response> responses = new ArrayList<Response>();
 
         for (Server s : connectedServers) {
+            System.out.println("Broadcasting to server " + s);
             try {
                 responses.add(comm.sendMessageAsync(m, s));
             } catch (IOException e) {
@@ -89,7 +90,9 @@ public class ServerController implements IncomingHandler {
             }
         }
 
+        m = new Message(m);
         m.put("requestStage", commit);
+
         for (Server s : connectedServers) {
             try {
                 comm.sendMessageAsync(m, s);
@@ -116,7 +119,6 @@ public class ServerController implements IncomingHandler {
     }
 
     public Message handleMessage(Message m, PoolEntity connectionEntity) {
-        System.out.println("incoming message: " + (MessageRequest)m.get("request"));
         MessageRequest request = (MessageRequest)m.get("request");
         Message reply = null;
         switch(request) {

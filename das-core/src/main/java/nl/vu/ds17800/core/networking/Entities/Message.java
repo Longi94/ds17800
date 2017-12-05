@@ -14,6 +14,9 @@ public class Message extends HashMap<String, Object> implements Serializable {
         super();
         this.put("timestamp", System.currentTimeMillis());
     }
+    public Message(Message m) {
+        super(m);
+    }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -21,9 +24,9 @@ public class Message extends HashMap<String, Object> implements Serializable {
         for (String k : this.keySet()) {
             if(k.equals("battlefield")) {
                 // too long to print
-                sb.append("  " + k + ": <battlefield> \n");
+                sb.append("  " + k + ": <battlefield>");
             } else {
-                sb.append("  " + k + ": " + this.get(k) + "\n");
+                sb.append("  " + k + ": " + this.get(k));
             }
         }
         return sb.toString();
