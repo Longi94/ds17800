@@ -35,9 +35,13 @@ public class ServerController implements IncomingHandler {
     // clients connected to this server
     private final ArrayList<Client> connectedClients;
 
+    // here we reserve spots while waiting for a commit
+    private final long[][] reservedSpot;
+
     ServerController(BattleField bf) {
         this.connectedServers = new ArrayList<Server>();
         this.connectedClients = new ArrayList<Client>();
+        reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
     }
 
     /**
@@ -216,6 +220,21 @@ public class ServerController implements IncomingHandler {
                             // here we need to add the pending message to a priority list based on the the
                             // message timestamps.
 
+                            if (request == moveUnit || request == spawnUnit) {
+                                // these are the only interactions that requires us to reserve a space
+                                long t = (long)m.get("timestamp");
+                                int x = (int)m.get("x");
+                                int y = (int)m.get("y");
+
+                                if (reservedSpot[x][y] != 0 && t < reservedSpot[x][y]) {
+                                    // this event is more recent so we will use this!
+                                    reservedSpot[x][y] = t;
+                                } else {
+                                    // we have reserved this spot already! so reject!
+                                    m.put("requestStage", RequestStage.reject);
+                                }
+                            }
+
                             // this message seems valid to us!
                             m.put("requestStage", RequestStage.accept);
                         } else {
@@ -226,6 +245,11 @@ public class ServerController implements IncomingHandler {
                     case commit:
                         bf.apply(m);
                         broadcastClients(m);
+                        if (request == moveUnit || request == spawnUnit) {
+                            int x = (int)m.get("x");
+                            int y = (int)m.get("y");
+                            reservedSpot[x][y] = 0;
+                        }
                     default:
                         if (broadcastServers(m)) {
                             // accepted by servers
