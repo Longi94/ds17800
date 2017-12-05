@@ -23,6 +23,7 @@ public class DasClient {
         }
 
         String unitType = args[0];
+        int preferredServer = Integer.parseInt(args[1]);
 
         if(!(unitType.equals("dragon") || unitType.equals("player"))) {
             System.out.println("Wrong unit type!");
@@ -31,7 +32,7 @@ public class DasClient {
         System.out.println("Unit Type: " + unitType);
         System.out.println("Running...");
 
-        Boolean success = clientController.initialiseConnection(unitType);
+        Boolean success = clientController.initialiseConnection(unitType, preferredServer);
 
         if(success) {
             System.out.println("Server connection set");

@@ -11,6 +11,7 @@ import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 import java.util.TreeMap;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
@@ -36,13 +37,20 @@ public class ClientController implements IncomingHandler{
      * Ping servers and get the best one
      * @return server descriptor
      */
-    private Server getServerToConnect() {
+    private Server getServerToConnect(int preferredServer) {
+
+        List<Server> servers = communication.getServers();
+
+        if (preferredServer >= 0 && servers.size() > preferredServer) {
+            return servers.get(preferredServer);
+        }
+
         System.out.println("Pinging servers...");
 
         // Using TreeMap to have already ordered list of servers (by ping)
         TreeMap<Long,Server> pingServMap = new TreeMap<Long,Server>();
 
-        for(Server srv : communication.getServers()) {
+        for(Server srv : servers) {
             long pingTime;
 
             try {
@@ -88,13 +96,13 @@ public class ClientController implements IncomingHandler{
      * @param unitId - my unitId if I am a reconnecting client
      * @return - returns message received as a response
      */
-    private Message connectServer(String unitId, String unitType) {
+    private Message connectServer(String unitId, String unitType, int preferredServer) {
         Message message = new Message();
         message.put("request", clientConnect);
         message.put("type", unitType);
         if(unitId != null) message.put("id", unitId);
 
-        Server serverToConnect = getServerToConnect();
+        Server serverToConnect = getServerToConnect(preferredServer);
 
         Message response;
         try {
@@ -122,7 +130,7 @@ public class ClientController implements IncomingHandler{
             unitType = "player";
         }
 
-        Message serverResponse = connectServer(DasClient.myUnit.getUnitID(), unitType);
+        Message serverResponse = connectServer(DasClient.myUnit.getUnitID(), unitType, -1);
         if (serverResponse != null) {
             System.out.println("MY UNIT ID (received from server): " + serverResponse.get("id"));
         } else {
@@ -142,8 +150,8 @@ public class ClientController implements IncomingHandler{
      * After successfull connection battleField and player unit are being set
      * @return succes flag
      */
-    public boolean initialiseConnection(String unitType) {
-        Message serverResponse = connectServer(null, unitType);
+    public boolean initialiseConnection(String unitType, int preferredServer) {
+        Message serverResponse = connectServer(null, unitType, preferredServer);
 
         if(serverResponse == null) return false;
         System.out.println("MY UNIT ID (received from server): " + serverResponse.get("id"));
