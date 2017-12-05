@@ -41,7 +41,8 @@ public class BattleField implements Serializable {
 
     /**
      * Get random free x y position in the battle field
-     * @return [x,y] or otherwise null if no free position was found
+     *
+     * @return [x, y] or otherwise null if no free position was found
      */
     public int[] getRandomFreePosition() {
         int[] pos;
@@ -53,7 +54,7 @@ public class BattleField implements Serializable {
             attempt++;
         } while (getUnit(x, y) != null && attempt < 10);
 
-        if (getUnit(x,y) != null) {
+        if (getUnit(x, y) != null) {
             return null;
         }
 
@@ -289,6 +290,29 @@ public class BattleField implements Serializable {
         }
 
         return players;
+    }
+
+    /**
+     * Find the nearest unit
+     *
+     * @param x    x coordinate
+     * @param y    y coordinate
+     * @param type the type of unit to find
+     * @return the nearest unit, null if there are no such units
+     */
+    public Unit getNearestUnit(int x, int y, Unit.UnitType type) {
+        Unit nearestUnit = null;
+        int currentD = Integer.MAX_VALUE;
+
+        for (Unit unit : units) {
+            int d = Math.abs(x - unit.getX()) + Math.abs(y - unit.getY());
+            if (unit.getType() == type && d > 0 && d < currentD) {
+                nearestUnit = unit;
+                currentD = d;
+            }
+        }
+
+        return nearestUnit;
     }
 
     @Override

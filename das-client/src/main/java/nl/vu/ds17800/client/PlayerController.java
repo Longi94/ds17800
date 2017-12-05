@@ -38,8 +38,7 @@ public class PlayerController implements Runnable {
                     break;
                 }
 
-                // Randomly choose one of the four wind directions to move to if there are no units present
-                direction = Direction.values()[(int) (Direction.values().length * random.nextDouble())];
+                direction = getDirection(myUnit);
 
                 switch (direction) {
                     case up:
@@ -114,6 +113,24 @@ public class PlayerController implements Runnable {
             }
         }
 
+    }
+
+    private Direction getDirection(Unit myUnit) {
+        Unit unit = DasClient.battleField.getNearestUnit(myUnit.getX(), myUnit.getY(), Unit.UnitType.DRAGON);
+
+        if (unit != null) {
+            // move towards the nearest dragon, random if no dragon
+            int dX = Math.abs(unit.getX() - myUnit.getX());
+            int dY = Math.abs(unit.getY() - myUnit.getY());
+
+            if (dX > dY) {
+                return unit.getX() > myUnit.getX() ? Direction.right : Direction.left;
+            } else {
+                return unit.getY() > myUnit.getY() ? Direction.down : Direction.up;
+            }
+        }
+
+        return Direction.values()[(int) (Direction.values().length * random.nextDouble())];
     }
 
 }
