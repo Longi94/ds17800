@@ -22,6 +22,12 @@ public class PlayerController implements Runnable {
         Unit adjacentUnit;
         int targetX = 0, targetY = 0;
 
+        try {
+            Thread.sleep(10000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         while (true) {
             try {
                 // Sleep while the player is considering its next move (HARDCODED 500)

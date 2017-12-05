@@ -107,7 +107,7 @@ public class ClientController implements IncomingHandler{
         Message response;
         try {
             System.out.println("Trying to connect server: " + serverToConnect.ipaddr + ", port: " + serverToConnect.serverPort);
-            response = communication.sendMessage(message, serverToConnect, 10000);
+            response = communication.sendMessage(message, serverToConnect, 30000);
 
             this.myServer = serverToConnect;
         } catch (Exception e) {

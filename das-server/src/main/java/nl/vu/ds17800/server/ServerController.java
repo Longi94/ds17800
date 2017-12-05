@@ -15,7 +15,6 @@ import nl.vu.ds17800.core.networking.IncomingHandler;
 import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.*;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
@@ -267,23 +266,25 @@ public class ServerController implements IncomingHandler {
             case dealDamage:
             case healDamage:
 
-                try {
-                    Message ack = new Message();
-                    ack.put(Communication.KEY_COMM_ID, m.get(Communication.KEY_COMM_ID));
-                    ack.put(Communication.KEY_COMM_TYPE, "__response");
-                    ack.put("request", acknowledge);
-                    synchronized (connectionEntity.outputStream){
-                        connectionEntity.outputStream.writeObject(ack);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
                 RequestStage rs = (RequestStage) m.get("requestStage");
-                if (rs == null && broadcastServers(m)) {
-                    // accepted by servers
-                    bf.apply(m);
-                    broadcastClients(m);
+                if (rs == null) {
+                    try {
+                        Message ack = new Message();
+                        ack.put(Communication.KEY_COMM_ID, m.get(Communication.KEY_COMM_ID));
+                        ack.put(Communication.KEY_COMM_TYPE, "__response");
+                        ack.put("request", acknowledge);
+                        synchronized (connectionEntity.outputStream){
+                            connectionEntity.outputStream.writeObject(ack);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    if (broadcastServers(m)) {
+                        // accepted by servers
+                        bf.apply(m);
+                        broadcastClients(m);
+                    }
                     return null;
                 } else {
                     switch (rs) {
@@ -313,7 +314,7 @@ public class ServerController implements IncomingHandler {
                                 m.put("requestStage", RequestStage.reject);
                             }
 
-                            return null;
+                            return Message.ack(m);
                         case commit:
                             bf.apply(m);
                             broadcastClients(m);
@@ -322,14 +323,14 @@ public class ServerController implements IncomingHandler {
                                 int y = (int)m.get("y");
                                 reservedSpot[x][y] = 0;
                             }
-                            return null;
+                            return Message.ack(m);
                         default:
                             if (broadcastServers(m)) {
                                 // accepted by servers
                                 bf.apply(m);
                                 broadcastClients(m);
                             }
-                            return null;
+                            return Message.ack(m);
                     }
                 }
             default:
@@ -354,7 +355,8 @@ public class ServerController implements IncomingHandler {
             }
         }
 
-        connectedClients.remove(ip);
+        System.out.println("Client " + ip + ":" + port + " disconnected");
+        connectedClients.remove(ip + ":" + port);
     }
 
     public void connectServer(Server s) throws IOException, InterruptedException {

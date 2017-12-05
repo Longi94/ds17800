@@ -15,6 +15,12 @@ public class DragonController implements Runnable {
 
     public void run() {
 
+        try {
+            Thread.sleep(10000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         while (true) {
             try {
                 // Sleep while the dragon is considering its next move (HARDCODED 2000)
