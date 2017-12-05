@@ -81,7 +81,8 @@ public class ServerController implements IncomingHandler {
             try {
                 responses.add(comm.sendMessageAsync(m, s));
             } catch (IOException e) {
-                System.out.println("unhandled: FAILED TO TRANSFER MESSAGE to server!");
+                System.out.println("unhandled: FAILED TO TRANSFER MESSAGE '" + m + "' to server!");
+                e.printStackTrace(System.out);
             }
         }
 
