@@ -171,7 +171,13 @@ public class ClientController implements IncomingHandler{
 
         //refresh battleField and myUnit to current state received by server
         DasClient.battleField = (BattleField) serverResponse.get("battlefield");
-        DasClient.myUnit = DasClient.battleField.findUnitById(myUnitId);
+        Unit retrievedUnit = DasClient.battleField.findUnitById(myUnitId);
+        if(retrievedUnit == null) {
+            System.out.println("Could not find my unit on battlefield!");
+            return false;
+        }
+        //set current state of my unit after reconnection
+        DasClient.myUnit = retrievedUnit;
         return true;
     }
 
