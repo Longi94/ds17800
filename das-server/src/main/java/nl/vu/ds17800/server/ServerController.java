@@ -15,6 +15,7 @@ import nl.vu.ds17800.core.networking.IncomingHandler;
 import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.*;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
@@ -29,8 +30,11 @@ public class ServerController implements IncomingHandler {
     private Communication comm;
     private BattleField bf = new BattleField();
 
+    private boolean initialized = false;
     // connected server peers
     private final List<Server> connectedServers;
+
+    private Server serverDescriptor;
 
     // clients connected to this server
     private final Set<String> connectedClients;
@@ -38,10 +42,19 @@ public class ServerController implements IncomingHandler {
     // here we reserve spots while waiting for a commit
     private final long[][] reservedSpot;
 
-    ServerController(BattleField bf) {
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    public void setInitialized(boolean initialized) {
+        this.initialized = initialized;
+    }
+
+    ServerController(BattleField bf, Server serverDescr) {
         this.connectedServers = Collections.synchronizedList(new ArrayList<Server>());
         this.connectedClients = Collections.synchronizedSet(new HashSet<String>());
         reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
+        serverDescriptor = serverDescr;
     }
 
     /**
@@ -209,8 +222,38 @@ public class ServerController implements IncomingHandler {
                 // transfer state
                 reply = new Message();
                 reply.put("request", serverConnect);
+                reply.put(Communication.KEY_COMM_TYPE, "__response");
+                reply.put(Communication.KEY_COMM_ID, m.get(Communication.KEY_COMM_ID));
                 reply.put("battlefield", bf);
-                return reply;
+                try{
+                    synchronized (connectionEntity.outputStream){
+                        connectionEntity.outputStream.writeObject(reply);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                synchronized (connectedServers){
+                    Server newServ = new Server();
+                    newServ.ipaddr = connectionEntity.socket.getInetAddress().toString();
+                    newServ.ipaddr = newServ.ipaddr.replace("127.0.0.1","localhost").replace("/", "");
+                    newServ.serverPort = (Integer)m.get("originPort");
+                    boolean knownServ = false;
+                    for(Server curSer : connectedServers){
+                        if(newServ.equals(curSer))
+                            knownServ = true;
+                    }
+                    if((!knownServ) && isInitialized()){
+                        try {
+                            connectServer(newServ);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                return null;
             case serverDisconnect:
                 // server node disconnected
                 // what remove from broadcast list?
@@ -317,11 +360,14 @@ public class ServerController implements IncomingHandler {
     public void connectServer(Server s) throws IOException, InterruptedException {
         Message m = new Message();
         m.put("request", serverConnect);
+        m.put("originPort", serverDescriptor.serverPort);
         Message resp = null;
         resp = comm.sendMessage(m, s, 1000);
 
         // if we made it here we are sure it worked
-        connectedServers.add(s);
+        synchronized (connectedServers){
+            connectedServers.add(s);
+        }
 
         if (bf == null) {
             // We have not set up the BattleField instance
