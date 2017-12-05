@@ -16,6 +16,7 @@ import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -32,22 +33,22 @@ public class ServerController implements IncomingHandler {
     private BattleField bf = new BattleField();
 
     // connected server peers
-    private final ArrayList<Server> connectedServers;
+    private final List<Server> connectedServers;
 
     // clients connected to this server
-    private final ArrayList<Client> connectedClients;
+    private final List<Client> connectedClients;
 
     // here we reserve spots while waiting for a commit
     private final long[][] reservedSpot;
 
     ServerController(BattleField bf) {
-        this.connectedServers = new ArrayList<Server>();
-        this.connectedClients = new ArrayList<Client>();
+        this.connectedServers = Collections.synchronizedList(new ArrayList<Server>());
+        this.connectedClients = Collections.synchronizedList(new ArrayList<Client>());
         reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
     }
 
     /**
-     * We do this intead of registering the handler on the Communcation instance because it
+     * We do this instead of registering the handler on the Communcation instance because it
      * requires to be created with a IncomingHandler
      */
     public void setCommuncation(Communication comm) {
@@ -131,7 +132,6 @@ public class ServerController implements IncomingHandler {
                 Client client = new Client();
                 client.ipaddr = connectionEntity.socket.getInetAddress().toString() + ":" + connectionEntity.socket.getPort();
 
-                connectedClients.add(client);
                 Unit player = null;
                 if (m.get("id") != null) {
                     // this is a reconnecting client that already has a Unit
@@ -182,6 +182,8 @@ public class ServerController implements IncomingHandler {
                     // well there might be some junk left on the message but..
                     broadcastClients(msgSpawnUnit);
                 }
+
+                connectedClients.add(client);
 
                 reply = new Message();
                 reply.put("request", clientConnect);
