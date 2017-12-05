@@ -123,8 +123,11 @@ public class ClientController implements IncomingHandler{
         }
 
         Message serverResponse = connectServer(DasClient.myUnit.getUnitID(), unitType);
-        System.out.println("MY UNIT ID (received from server): " + serverResponse.get("id"));
-        if(serverResponse == null) return false;
+        if (serverResponse != null) {
+            System.out.println("MY UNIT ID (received from server): " + serverResponse.get("id"));
+        } else {
+            return false;
+        }
 
         String myUnitId = DasClient.myUnit.getUnitID();
 
