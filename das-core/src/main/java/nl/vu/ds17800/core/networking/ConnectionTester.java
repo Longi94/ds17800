@@ -28,7 +28,9 @@ public class ConnectionTester extends Thread {
                     Message testMessage = new Message();
                     testMessage.put(Communication.KEY_COMM_TYPE, HEARTBEATING);
                     try {
-                        entity.outputStream.writeObject(testMessage);
+                        synchronized (entity.outputStream){
+                            entity.outputStream.writeObject(testMessage);
+                        }
                     } catch (IOException e) {
                         // socket is lost
                         socketPool.remove(key);

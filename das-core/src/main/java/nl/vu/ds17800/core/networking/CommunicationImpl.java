@@ -70,10 +70,11 @@ public class CommunicationImpl implements Communication {
             Worker worker = new Worker(incomeHandler, entity);
             worker.start();
         }
-
         message.put(KEY_COMM_TYPE, "__request");
         message.put(KEY_COMM_ID, mesID);
-        entity.outputStream.writeObject(message);
+        synchronized (entity.outputStream){
+            entity.outputStream.writeObject(message);
+        }
         System.out.println("Sending message to server " + dest + " " + message);
         return new Response(mesID, entity.responseBuffer);
     }
@@ -92,7 +93,9 @@ public class CommunicationImpl implements Communication {
         }
         message.put(KEY_COMM_TYPE, "__request");
         message.put(KEY_COMM_ID, mesID);
-        entity.outputStream.writeObject(message);
+        synchronized (entity.outputStream){
+            entity.outputStream.writeObject(message);
+        }
         return new Response(mesID, entity.responseBuffer);
     }
 
