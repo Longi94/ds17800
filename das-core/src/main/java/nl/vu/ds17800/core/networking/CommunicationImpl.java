@@ -75,7 +75,6 @@ public class CommunicationImpl implements Communication {
         synchronized (entity.outputStream){
             entity.outputStream.writeObject(message);
         }
-        System.out.println("Sending message to server " + dest + " " + message);
         return new Response(mesID, entity.responseBuffer);
     }
 

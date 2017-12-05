@@ -15,4 +15,7 @@ public enum MessageRequest {
 
     serverConnect,
     serverDisconnect,
+
+    // generic acknowledge message
+    acknowledge
 }

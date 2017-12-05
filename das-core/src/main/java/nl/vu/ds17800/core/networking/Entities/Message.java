@@ -3,6 +3,8 @@ package nl.vu.ds17800.core.networking.Entities;
 import java.io.Serializable;
 import java.util.HashMap;
 
+import static nl.vu.ds17800.core.model.MessageRequest.acknowledge;
+
 public class Message extends HashMap<String, Object> implements Serializable {
     /**
      * Message class is a regular HashMap with String key and Object value;
@@ -38,7 +40,7 @@ public class Message extends HashMap<String, Object> implements Serializable {
      */
     public static Message ack(Message message) {
         Message m = new Message();
-        m.put("request", message.get("request"));
+        m.put("request", acknowledge);
         return m;
     }
 }
