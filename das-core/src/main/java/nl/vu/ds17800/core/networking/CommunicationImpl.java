@@ -111,7 +111,7 @@ public class CommunicationImpl implements Communication {
     public List<Server> getServers(){
         List<Server> servers = new ArrayList<Server>();
         Server s;
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 5; i++) {
             s = new Server();
             s.serverPort = LISTEN_PORTRANGE_START + i;
             s.ipaddr = "localhost";
