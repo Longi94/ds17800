@@ -28,6 +28,7 @@ public class ServerController implements IncomingHandler {
 
     private Communication comm;
     private BattleField bf = new BattleField();
+    private Random random;
 
     private boolean initialized = false;
     // connected server peers
@@ -54,6 +55,8 @@ public class ServerController implements IncomingHandler {
         this.connectedClients = Collections.synchronizedSet(new HashSet<String>());
         reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
         serverDescriptor = serverDescr;
+
+        random = new Random(serverDescr.serverPort);
     }
 
     /**
@@ -152,9 +155,9 @@ public class ServerController implements IncomingHandler {
 
                     // BattleField assigns the unit its position, thus -1, -1
                     if (((String)m.get("type")).equals("dragon")) {
-                        player = new Dragon(this.bf.getNewUnitID(),-1, -1);
+                        player = new Dragon(this.bf.getNewUnitID(),-1, -1, random);
                     } else {
-                        player = new Player(this.bf.getNewUnitID(),-1, -1);
+                        player = new Player(this.bf.getNewUnitID(),-1, -1, random);
                     }
 
                     Message msgSpawnUnit = new Message();
