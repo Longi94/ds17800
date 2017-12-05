@@ -9,7 +9,6 @@ import nl.vu.ds17800.core.model.units.Unit;
 import nl.vu.ds17800.core.networking.Communication;
 import nl.vu.ds17800.core.networking.Entities.Client;
 import nl.vu.ds17800.core.networking.Entities.Message;
-import nl.vu.ds17800.core.networking.Entities.Response;
 import nl.vu.ds17800.core.networking.Entities.Server;
 import nl.vu.ds17800.core.networking.IncomingHandler;
 import nl.vu.ds17800.core.networking.PoolEntity;
@@ -76,32 +75,21 @@ public class ServerController implements IncomingHandler {
     private boolean broadcastServers(Message m) {
         m.put("requestStage", ask);
 
-        List<Response> responses = new ArrayList<Response>();
-
         for (Server s : connectedServers) {
             System.out.println("Broadcasting to server " + s);
             try {
-                responses.add(comm.sendMessageAsync(m, s));
+                Message resp = comm.sendMessage(m, s, 500);
+
+                if (resp != null && ((RequestStage)resp.get("requestStage"))== RequestStage.reject) {
+                    // got a response and it was reject! the action did not succeed
+                    return false;
+                }
             } catch (IOException e) {
                 System.out.println("unhandled: FAILED TO TRANSFER MESSAGE '" + m + "' to server!");
                 e.printStackTrace(System.out);
-            }
-        }
-
-        Message resp = null;
-
-        for (Response r : responses) {
-            try {
-                resp = r.getResponse(500);
             } catch (InterruptedException e) {
-
                 System.out.println("Timeout! Assume that it's accepted!");
                 e.printStackTrace();
-            }
-
-            if (resp != null && ((RequestStage)resp.get("requestStage"))== RequestStage.reject) {
-                // got a response and it was reject! the action did not succeed
-                return false;
             }
         }
 
@@ -367,7 +355,7 @@ public class ServerController implements IncomingHandler {
             }
         }
 
-        System.out.println("Client " + ip + ":" + port + " disconnected");
+        System.out.println("Peer " + ip + ":" + port + " disconnected");
         connectedClients.remove(ip + ":" + port);
     }
 

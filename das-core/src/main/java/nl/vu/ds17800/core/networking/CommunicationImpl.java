@@ -84,7 +84,7 @@ public class CommunicationImpl implements Communication {
     }
 
     public Message sendMessage(Message message, Server dest, int timeout) throws InterruptedException, IOException {
-        return sendMessageAsync(message, dest).getResponse(timeout);
+        return sendMessageAsync(message, dest).getResponse(timeout, dest);
     }
 
     public Response sendMessageAsync(Message message, Client dest) throws IOException {
@@ -105,7 +105,7 @@ public class CommunicationImpl implements Communication {
     }
 
     public Message sendMessage(Message message, Client dest, int timeout) throws InterruptedException, IOException{
-        return sendMessageAsync(message, dest).getResponse(timeout);
+        return sendMessageAsync(message, dest).getResponse(timeout, dest);
     }
 
     public List<Server> getServers(){
