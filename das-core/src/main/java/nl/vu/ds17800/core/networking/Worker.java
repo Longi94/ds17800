@@ -35,17 +35,17 @@ public class Worker extends Thread{
         while(true){
             try {
                 Message message = (Message)oin.readObject();
-                if(message.get("__communicationType").equals(HEARTBEATING))
+                if(((String)message.get("__communicationType")).equals(HEARTBEATING))
                     continue;
 
-                if(message.get("__communicationType").equals("__response")){
+                if(((String)message.get("__communicationType")).equals("__response")){
                     synchronized (connectionEntity.responseBuffer){
                         connectionEntity.responseBuffer.add(message);
                         connectionEntity.responseBuffer.notifyAll();
                     }
                     continue;
                 }
-                String messageKey = message.get("__communicationID").toString();
+                String messageKey = (String)message.get("__communicationID");
                 message = messageshandler.handleMessage(message);
 
                 if(message == null)

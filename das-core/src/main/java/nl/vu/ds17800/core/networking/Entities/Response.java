@@ -18,7 +18,8 @@ public class Response {
             while(true){
                 synchronized (responseBuffer){
                     for(Message message: responseBuffer){
-                        if(message.get("__communicationID").equals(messageKey)){
+                        System.out.println("in buffer : " + ((String)message.get("__communicationID")));
+                        if(((String)message.get("__communicationID")).equals(messageKey)){
                             responseBuffer.remove(message);
                             return message;
                         }

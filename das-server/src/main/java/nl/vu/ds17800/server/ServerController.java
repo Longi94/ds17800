@@ -114,6 +114,7 @@ public class ServerController implements IncomingHandler {
     }
 
     public Message handleMessage(Message m) {
+        System.out.println("incoming message: " + (MessageRequest)m.get("request"));
         MessageRequest request = (MessageRequest)m.get("request");
         Message reply = null;
         switch(request) {
