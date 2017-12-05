@@ -60,7 +60,7 @@ public class CommunicationImpl implements Communication {
     }
 
     public Response sendMessageAsync(Message message, Server dest) throws IOException {
-        System.out.print("-> " + message);
+        System.out.println("-> " + message);
         String inetAddress = dest.ipaddr;
         int port = dest.serverPort;
         PoolEntity entity;
@@ -88,7 +88,7 @@ public class CommunicationImpl implements Communication {
     }
 
     public Response sendMessageAsync(Message message, Client dest) throws IOException {
-        System.out.print("-> " + message);
+        System.out.println("-> " + message);
         String inetAddress = dest.ipaddr;
         PoolEntity entity;
         String mesID = generateMessageID();

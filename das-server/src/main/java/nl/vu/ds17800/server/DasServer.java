@@ -16,7 +16,7 @@ public class DasServer {
     DasServer(Server serverDescr) {
         BattleField bf = new BattleField();
 
-        ServerController sc = new ServerController(bf);
+        ServerController sc = new ServerController(bf, serverDescr);
         Communication c =  new CommunicationImpl(sc, serverDescr);
         sc.setCommuncation(c);
 
@@ -42,6 +42,7 @@ public class DasServer {
                 e.printStackTrace();
             }
         }
+        sc.setInitialized(true);
     }
 
     public static void main(String[] args) {
