@@ -22,6 +22,9 @@ public class Server implements Serializable{
         if (this == o) {
             return true;
         }
+        if (!(o instanceof Server)) {
+            return false;
+        }
         Server s = (Server) o;
         return s.serverPort == this.serverPort &&
                 s.ipaddr == this.ipaddr &&
