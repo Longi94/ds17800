@@ -3,6 +3,8 @@ package nl.vu.ds17800.core.networking;
 import nl.vu.ds17800.core.networking.Entities.Server;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
@@ -45,6 +47,15 @@ public class NetworkRouter extends Thread{
             }
             PoolEntity entity = new PoolEntity();
             entity.socket = socket;
+            try{
+                entity.outputStream = new ObjectOutputStream(socket.getOutputStream());
+                entity.inputStream = new ObjectInputStream(socket.getInputStream());
+            } catch (IOException e) {
+                System.out.println("NetworkRouter: cannot take object streams for writing and reading");
+                continue;
+            }
+
+
             synchronized (socketPool){
                 String socketKey = socket.getInetAddress() + ":"+ String.valueOf(socket.getPort());
                 PoolEntity existance = socketPool.get(socketKey);
