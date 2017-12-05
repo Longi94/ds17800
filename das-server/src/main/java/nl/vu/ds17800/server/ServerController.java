@@ -234,7 +234,6 @@ public class ServerController implements IncomingHandler {
                 } else {
                     switch (rs) {
                         case ask:
-                            System.out.println("Asked ");
                             if (bf.check(m)) {
                                 // here we need to add the pending message to a priority list based on the the
                                 // message timestamps.
