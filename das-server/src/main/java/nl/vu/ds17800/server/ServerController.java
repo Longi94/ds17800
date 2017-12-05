@@ -223,12 +223,25 @@ public class ServerController implements IncomingHandler {
             case removeUnit:
             case dealDamage:
             case healDamage:
+
+                try {
+                    Message ack = new Message();
+                    ack.put(Communication.KEY_COMM_ID, m.get(Communication.KEY_COMM_ID));
+                    ack.put(Communication.KEY_COMM_TYPE, "__response");
+                    ack.put("request", acknowledge);
+                    synchronized (connectionEntity.outputStream){
+                        connectionEntity.outputStream.writeObject(ack);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
                 RequestStage rs = (RequestStage) m.get("requestStage");
                 if (rs == null && broadcastServers(m)) {
                     // accepted by servers
                     bf.apply(m);
                     broadcastClients(m);
-                    return Message.ack(m);
+                    return null;
                 } else {
                     switch (rs) {
                         case ask:
@@ -257,7 +270,7 @@ public class ServerController implements IncomingHandler {
                                 m.put("requestStage", RequestStage.reject);
                             }
 
-                            return Message.ack(m);
+                            return null;
                         case commit:
                             bf.apply(m);
                             broadcastClients(m);
@@ -266,14 +279,14 @@ public class ServerController implements IncomingHandler {
                                 int y = (int)m.get("y");
                                 reservedSpot[x][y] = 0;
                             }
-                            return Message.ack(m);
+                            return null;
                         default:
                             if (broadcastServers(m)) {
                                 // accepted by servers
                                 bf.apply(m);
                                 broadcastClients(m);
                             }
-                            return Message.ack(m);
+                            return null;
                     }
                 }
             default:

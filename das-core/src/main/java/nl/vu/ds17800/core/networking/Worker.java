@@ -39,15 +39,12 @@ public class Worker extends Thread{
                 String messageKey = (String)message.get(Communication.KEY_COMM_ID);
                 message = messageshandler.handleMessage(message, connectionEntity);
 
-                if(message == null) {
-                    System.out.println("Nope you may not be null!");
-                    System.exit(1);
-                }
-
-                message.put(Communication.KEY_COMM_ID, messageKey);
-                message.put(Communication.KEY_COMM_TYPE, "__response");
-                synchronized (connectionEntity.outputStream){
-                    connectionEntity.outputStream.writeObject(message);
+                if (message != null) {
+                    message.put(Communication.KEY_COMM_ID, messageKey);
+                    message.put(Communication.KEY_COMM_TYPE, "__response");
+                    synchronized (connectionEntity.outputStream){
+                        connectionEntity.outputStream.writeObject(message);
+                    }
                 }
             } catch (IOException e) {
                 System.out.println("Error: " + e.getMessage());
