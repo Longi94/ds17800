@@ -23,7 +23,7 @@ public class DasClient {
         }
 
         String unitType = args[0];
-        int preferredServer = Integer.parseInt(args[1]);
+        int preferredServer = args.length >= 2 ? Integer.parseInt(args[1]) : -1;
 
         if(!(unitType.equals("dragon") || unitType.equals("player"))) {
             System.out.println("Wrong unit type!");

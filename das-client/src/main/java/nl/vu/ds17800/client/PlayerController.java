@@ -90,7 +90,9 @@ public class PlayerController implements Runnable {
                             break;
                         case PLAYER:
                             // There is a player in the square, attempt a healing
-                            actionWrapper = new ActionWrapper(healDamage, null, targetX, targetY, myUnit.getAttackPoints());
+                            if(adjacentUnit.getHitPoints() < adjacentUnit.getMaxHitPoints()/2) {
+                                actionWrapper = new ActionWrapper(healDamage, null, targetX, targetY, myUnit.getAttackPoints());
+                            }
                             break;
                         case DRAGON:
                             // There is a dragon in the square, attempt a dragon slaying
@@ -100,7 +102,10 @@ public class PlayerController implements Runnable {
 
                 }
 
-                boolean success = DasClient.clientController.sendUnitAction(actionWrapper);
+                boolean success = true;
+                if(actionWrapper != null) {
+                    success = DasClient.clientController.sendUnitAction(actionWrapper);
+                }
 
                 if(!success) {
                     System.out.println("CONNECTION LOST, RECONNECTION FAILED");
@@ -110,6 +115,7 @@ public class PlayerController implements Runnable {
             } catch (Exception e) {
                 System.out.println("IN THREAD ERROR: " + e.getMessage() + " [Stack]:");
                 e.printStackTrace();
+                break;
             }
         }
 
