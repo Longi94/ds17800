@@ -220,7 +220,7 @@ public class ClientController implements IncomingHandler{
                 System.out.println("Unhandled message request from server");
         }
 
-        return null;
+        return Message.ack(message);
     }
 
     @Override

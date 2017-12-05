@@ -259,7 +259,7 @@ public class ServerController implements IncomingHandler {
                                 m.put("requestStage", RequestStage.reject);
                             }
 
-                            return m;
+                            return Message.ack(m);
                         case commit:
                             bf.apply(m);
                             broadcastClients(m);
@@ -268,18 +268,18 @@ public class ServerController implements IncomingHandler {
                                 int y = (int)m.get("y");
                                 reservedSpot[x][y] = 0;
                             }
-                            return null;
+                            return Message.ack(m);
                         default:
                             if (broadcastServers(m)) {
                                 // accepted by servers
                                 bf.apply(m);
                                 broadcastClients(m);
                             }
-                            return null;
+                            return Message.ack(m);
                     }
                 }
             default:
-                return null;
+                return Message.ack(m);
         }
     }
 
