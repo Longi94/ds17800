@@ -13,20 +13,21 @@ public class Response {
     }
 
     public Message getResponse(int timeout) throws InterruptedException {
-        synchronized (responseBuffer){
+
             long curTime = System.currentTimeMillis();
             while(true){
-                for(Message message: responseBuffer){
-                    if(message.get("__communicationID").equals(messageKey)){
-                        responseBuffer.remove(message);
-                        return message;
+                synchronized (responseBuffer){
+                    for(Message message: responseBuffer){
+                        if(message.get("__communicationID").equals(messageKey)){
+                            responseBuffer.remove(message);
+                            return message;
+                        }
                     }
+                    long iterTime = System.currentTimeMillis();
+                    if( Math.abs(iterTime - curTime ) > timeout)
+                        throw new InterruptedException();
                 }
-                long iterTime = System.currentTimeMillis();
-                if( (iterTime - curTime ) > timeout)
-                    throw new InterruptedException();
-                responseBuffer.wait();
-            }
+                Thread.sleep(200);
         }
 
     }
