@@ -15,11 +15,11 @@ public class DragonController implements Runnable {
 
     public void run() {
 
-        try {
+       /* try {
             Thread.sleep(10000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
 
         while (true) {
             try {

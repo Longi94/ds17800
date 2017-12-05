@@ -13,7 +13,7 @@ public class Response {
         responseBuffer = buffer;
     }
 
-    public Message getResponse(int timeout) throws InterruptedException {
+    public Message getResponse(int timeout, Server dest) throws InterruptedException {
 
             long curTime = System.currentTimeMillis();
             while(true){
@@ -25,8 +25,10 @@ public class Response {
                         }
                     }
                     long iterTime = System.currentTimeMillis();
-                    if( Math.abs(iterTime - curTime ) > timeout)
+                    if( Math.abs(iterTime - curTime ) > timeout) {
+                        System.out.println("Timed out while waiting for answer from: " + dest);
                         throw new InterruptedException();
+                    }
                 }
                 Thread.sleep(200);
         }

@@ -83,14 +83,17 @@ public class BattleField implements Serializable {
      * specified position.
      */
     public boolean spawnUnit(Unit unit, int x, int y) {
-        if (map[x][y] != null) {
-            return false;
+        synchronized (map) {
+
+            if (map[x][y] != null) {
+                return false;
+            }
+
+            map[x][y] = unit;
+            unit.setPosition(x, y);
+            units.add(unit);
+
         }
-
-        map[x][y] = unit;
-        unit.setPosition(x, y);
-        units.add(unit);
-
         return true;
     }
 
@@ -107,12 +110,15 @@ public class BattleField implements Serializable {
      * specified position.
      */
     public boolean putUnit(Unit unit, int x, int y) {
-        if (map[x][y] != null) {
-            return false;
-        }
+        synchronized (map) {
 
-        map[x][y] = unit;
-        unit.setPosition(x, y);
+            if (map[x][y] != null) {
+                return false;
+            }
+
+            map[x][y] = unit;
+            unit.setPosition(x, y);
+        }
 
         return true;
     }
@@ -141,20 +147,24 @@ public class BattleField implements Serializable {
      * @return true on success.
      */
     public boolean moveUnit(Unit unit, int newX, int newY) {
-        int originalX = unit.getX();
-        int originalY = unit.getY();
+        synchronized (map) {
 
-        if (unit.getHitPoints() <= 0)
-            return false;
+            int originalX = unit.getX();
+            int originalY = unit.getY();
 
-        if (newX < 0 || newX >= BattleField.MAP_WIDTH ||
-                newY < 0 || newY >= BattleField.MAP_HEIGHT ||
-                map[newX][newY] != null ||
-                !putUnit(unit, newX, newY)) {
-            return false;
+            if (unit.getHitPoints() <= 0) {
+                return false;
+            }
+
+            if (newX < 0 || newX >= BattleField.MAP_WIDTH ||
+                    newY < 0 || newY >= BattleField.MAP_HEIGHT ||
+                    map[newX][newY] != null ||
+                    !putUnit(unit, newX, newY)) {
+                return false;
+            }
+
+            map[originalX][originalY] = null;
         }
-
-        map[originalX][originalY] = null;
         return true;
     }
 
@@ -165,12 +175,16 @@ public class BattleField implements Serializable {
      * @param y position.
      */
     public void removeUnit(int x, int y) {
-        Unit unitToRemove = getUnit(x, y);
-        if (unitToRemove == null) {
-            return; // There was no unit here to remove
+
+        synchronized (map) {
+
+            Unit unitToRemove = getUnit(x, y);
+            if (unitToRemove == null) {
+                return; // There was no unit here to remove
+            }
+            map[x][y] = null;
+            units.remove(unitToRemove);
         }
-        map[x][y] = null;
-        units.remove(unitToRemove);
     }
 
     /**
