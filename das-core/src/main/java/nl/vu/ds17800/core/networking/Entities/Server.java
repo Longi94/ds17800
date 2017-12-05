@@ -17,4 +17,14 @@ public class Server implements Serializable{
         this.ipaddr = ipaddr;
         this.serverPort = serverPort;
     }
+
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        Server s = (Server) o;
+        return s.serverPort == this.serverPort &&
+                s.ipaddr == this.ipaddr &&
+                s.rank == this.rank;
+    }
 }

@@ -28,6 +28,10 @@ public class DasServer {
         }
 
         for (Server s : c.getServers()) {
+            if(s.equals(serverDescr)) {
+                continue;
+            }
+
             try {
                 sc.connectServer(s);
             } catch (IOException e) {
