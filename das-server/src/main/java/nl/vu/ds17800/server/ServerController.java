@@ -184,6 +184,7 @@ public class ServerController implements IncomingHandler {
 
                 // can this be rejected?
                 broadcastServers(msgRemoveUnit);
+                broadcastClients(msgRemoveUnit);
                 reply = new Message();
                 reply.put("request", clientDisconnect);
 
@@ -224,9 +225,16 @@ public class ServerController implements IncomingHandler {
                         return m;
                     case commit:
                         bf.apply(m);
+                        broadcastClients(m);
                     default:
-                        break;
+                        if (broadcastServers(m)) {
+                            // accepted by servers
+                            bf.apply(m);
+                            broadcastClients(m);
+                        }
+                        return null;
                 }
+            default:
                 return null;
         }
     }
