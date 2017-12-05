@@ -28,7 +28,7 @@ public class Worker extends Thread{
                 if(((String)message.get("__communicationType")).equals(HEARTBEATING))
                     continue;
 
-                System.out.println("In:  " + message);
+                System.out.println("<- " + message);
                 if(((String)message.get("__communicationType")).equals("__response")){
                     synchronized (connectionEntity.responseBuffer){
                         connectionEntity.responseBuffer.add(message);
@@ -44,7 +44,6 @@ public class Worker extends Thread{
 
                 message.put("__communicationID", messageKey);
                 message.put("__communicationType", "__response");
-                System.out.println("Out: " + message);
                 connectionEntity.outputStream.writeObject(message);
             } catch (IOException e) {
                 System.out.println("Error: " + e.getMessage());

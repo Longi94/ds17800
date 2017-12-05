@@ -109,6 +109,8 @@ public class ServerController implements IncomingHandler {
      * @param m message to broadcast
      */
     private void broadcastClients(Message m) {
+        m = new Message(m);
+        m.remove("requestStage");
         for (Client c : connectedClients) {
             try {
                 comm.sendMessageAsync(m, c);
@@ -224,58 +226,58 @@ public class ServerController implements IncomingHandler {
             case dealDamage:
             case healDamage:
                 RequestStage rs = (RequestStage) m.get("requestStage");
-                if (rs == null) {
-                    if (broadcastServers(m)) {
-                        // accepted by servers
-                        bf.apply(m);
-                        broadcastClients(m);
-                    }
-                } else
-                switch (rs) {
-                    case ask:
-                        System.out.println("Asked ");
-                        if (bf.check(m)) {
-                            // here we need to add the pending message to a priority list based on the the
-                            // message timestamps.
+                if (rs == null && broadcastServers(m)) {
+                    // accepted by servers
+                    bf.apply(m);
+                    broadcastClients(m);
+                    return Message.ack(m);
+                } else {
+                    switch (rs) {
+                        case ask:
+                            System.out.println("Asked ");
+                            if (bf.check(m)) {
+                                // here we need to add the pending message to a priority list based on the the
+                                // message timestamps.
 
-                            if (request == moveUnit || request == spawnUnit) {
-                                // these are the only interactions that requires us to reserve a space
-                                long t = (long)m.get("timestamp");
-                                int x = (int)m.get("x");
-                                int y = (int)m.get("y");
+                                if (request == moveUnit || request == spawnUnit) {
+                                    // these are the only interactions that requires us to reserve a space
+                                    long t = (long)m.get("timestamp");
+                                    int x = (int)m.get("x");
+                                    int y = (int)m.get("y");
 
-                                if (reservedSpot[x][y] != 0 && t < reservedSpot[x][y]) {
-                                    // this event is more recent so we will use this!
-                                    reservedSpot[x][y] = t;
-                                } else {
-                                    // we have reserved this spot already! so reject!
-                                    m.put("requestStage", RequestStage.reject);
+                                    if (reservedSpot[x][y] != 0 && t < reservedSpot[x][y]) {
+                                        // this event is more recent so we will use this!
+                                        reservedSpot[x][y] = t;
+                                    } else {
+                                        // we have reserved this spot already! so reject!
+                                        m.put("requestStage", RequestStage.reject);
+                                    }
                                 }
+
+                                // this message seems valid to us!
+                                m.put("requestStage", RequestStage.accept);
+                            } else {
+                                m.put("requestStage", RequestStage.reject);
                             }
 
-                            // this message seems valid to us!
-                            m.put("requestStage", RequestStage.accept);
-                        } else {
-                            m.put("requestStage", RequestStage.reject);
-                        }
-
-                        return m;
-                    case commit:
-                        bf.apply(m);
-                        broadcastClients(m);
-                        if (request == moveUnit || request == spawnUnit) {
-                            int x = (int)m.get("x");
-                            int y = (int)m.get("y");
-                            reservedSpot[x][y] = 0;
-                        }
-                        return null;
-                    default:
-                        if (broadcastServers(m)) {
-                            // accepted by servers
+                            return m;
+                        case commit:
                             bf.apply(m);
                             broadcastClients(m);
-                        }
-                        return null;
+                            if (request == moveUnit || request == spawnUnit) {
+                                int x = (int)m.get("x");
+                                int y = (int)m.get("y");
+                                reservedSpot[x][y] = 0;
+                            }
+                            return null;
+                        default:
+                            if (broadcastServers(m)) {
+                                // accepted by servers
+                                bf.apply(m);
+                                broadcastClients(m);
+                            }
+                            return null;
+                    }
                 }
             default:
                 return null;

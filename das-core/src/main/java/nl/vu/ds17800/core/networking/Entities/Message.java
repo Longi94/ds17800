@@ -20,7 +20,6 @@ public class Message extends HashMap<String, Object> implements Serializable {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Message:");
         for (String k : this.keySet()) {
             if(k.equals("battlefield")) {
                 // too long to print
@@ -30,5 +29,16 @@ public class Message extends HashMap<String, Object> implements Serializable {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * convenience constructor for creating an ack Message
+     * @param message
+     * @return
+     */
+    public static Message ack(Message message) {
+        Message m = new Message();
+        m.put("request", message.get("request"));
+        return m;
     }
 }
