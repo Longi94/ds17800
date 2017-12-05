@@ -189,8 +189,11 @@ public class ClientController implements IncomingHandler{
         }
 
         try {
+            System.out.println("Client: sending message...");
             communication.sendMessage(message, myServer, SND_MSG_TIMEOUT);
+            System.out.println("Client: message sent successfully");
         } catch (Exception e) {
+            System.out.println("Server not responding!");
             System.out.println("Could not connect to server: " + e.getMessage());
             System.out.println("Trying to reconnect...");
             return reconnectServer(); // return success flag - in that situation current action request is aborted
