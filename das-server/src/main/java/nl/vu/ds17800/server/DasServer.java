@@ -28,11 +28,16 @@ public class DasServer {
         }
 
         for (Server s : c.getServers()) {
+            if(s.equals(serverDescr)) {
+                continue;
+            }
+
+            System.out.println("Connecting to server " + s.toString() + "...");
+
             try {
                 sc.connectServer(s);
             } catch (IOException e) {
-                System.out.println("Unable to connect to server " + s.ipaddr + ":" + s.serverPort);
-                e.printStackTrace();
+                System.out.println("Unable to connect to server " + s.toString() + ": " + e.getMessage());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -47,6 +52,7 @@ public class DasServer {
         int port = Integer.parseInt(args[0]);
         Server serverDescr = new Server();
         serverDescr.serverPort = port;
+        serverDescr.ipaddr = "localhost";
 
         new DasServer(serverDescr);
     }
