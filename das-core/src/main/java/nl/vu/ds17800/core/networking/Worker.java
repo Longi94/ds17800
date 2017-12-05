@@ -23,18 +23,10 @@ public class Worker extends Thread{
     }
 
     public void run(){
-        ObjectInputStream oin = null;
-        ObjectOutputStream oout = null;
         System.out.println("New connection " + connectionEntity.socket.getInetAddress() + " on port " + connectionEntity.socket.getPort());
-        try {
-            oin = new ObjectInputStream(connectionEntity.socket.getInputStream());
-            oout = new ObjectOutputStream(connectionEntity.socket.getOutputStream());
-        } catch (IOException e) {
-            return;
-        }
         while(true){
             try {
-                Message message = (Message)oin.readObject();
+                Message message = (Message)connectionEntity.inputStream.readObject();
                 if(((String)message.get("__communicationType")).equals(HEARTBEATING))
                     continue;
 
@@ -60,7 +52,7 @@ public class Worker extends Thread{
                 message.put("__communicationID", messageKey);
                 message.put("__communicationType", "__response");
                 System.out.println("Sending response! " + message);
-                oout.writeObject(message);
+                connectionEntity.outputStream.writeObject(message);
             } catch (IOException e) {
                 return;
             } catch (ClassNotFoundException e) {

@@ -6,6 +6,7 @@ import nl.vu.ds17800.core.networking.Entities.Response;
 import nl.vu.ds17800.core.networking.Entities.Server;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -58,22 +59,21 @@ public class CommunicationImpl implements Communication {
         String inetAddress = dest.ipaddr;
         int port = dest.serverPort;
         PoolEntity entity;
-        ObjectOutputStream oout = null;
         String mesID = generateMessageID();
         entity = socketPool.get(CommunicationImpl.socketKey(dest));
         if(entity == null){
             entity = new PoolEntity();
             entity.socket = new Socket(InetAddress.getByName(inetAddress), port);
             socketPool.put(CommunicationImpl.socketKey(dest), entity);
+            entity.outputStream = new ObjectOutputStream(entity.socket.getOutputStream());
+            entity.inputStream = new ObjectInputStream(entity.socket.getInputStream());
             Worker worker = new Worker(incomeHandler, entity);
             worker.start();
         }
 
-        oout = new ObjectOutputStream(entity.socket.getOutputStream());
-
         message.put("__communicationType", "__request");
         message.put("__communicationID", mesID);
-        oout.writeObject(message);
+        entity.outputStream.writeObject(message);
         System.out.println("Sending message to server " + dest + " " + message);
         return new Response(mesID, entity.responseBuffer);
     }
@@ -85,7 +85,6 @@ public class CommunicationImpl implements Communication {
     public Response sendMessageAsync(Message message, Client dest) throws IOException {
         String inetAddress = dest.ipaddr;
         PoolEntity entity;
-        ObjectOutputStream oout = null;
         String mesID = generateMessageID();
         entity = socketPool.get(inetAddress);
         if(entity == null){
@@ -93,7 +92,7 @@ public class CommunicationImpl implements Communication {
         }
         message.put("__communicationType", "__request");
         message.put("__communicationID", mesID);
-        oout.writeObject(message);
+        entity.outputStream.writeObject(message);
         return new Response(mesID, entity.responseBuffer);
     }
 
