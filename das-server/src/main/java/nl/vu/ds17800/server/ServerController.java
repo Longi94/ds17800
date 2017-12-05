@@ -12,6 +12,8 @@ import nl.vu.ds17800.core.networking.Entities.Message;
 import nl.vu.ds17800.core.networking.Entities.Response;
 import nl.vu.ds17800.core.networking.Entities.Server;
 import nl.vu.ds17800.core.networking.IncomingHandler;
+import nl.vu.ds17800.core.networking.PoolEntity;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,7 +115,7 @@ public class ServerController implements IncomingHandler {
         }
     }
 
-    public Message handleMessage(Message m) {
+    public Message handleMessage(Message m, PoolEntity connectionEntity) {
         System.out.println("incoming message: " + (MessageRequest)m.get("request"));
         MessageRequest request = (MessageRequest)m.get("request");
         Message reply = null;
@@ -121,6 +123,11 @@ public class ServerController implements IncomingHandler {
             case clientConnect:
                 // This server got a new client
                 System.out.println("New client connected!");
+
+                Client client = new Client();
+                client.ipaddr = connectionEntity.socket.getInetAddress().toString() + ":" + connectionEntity.socket.getPort();
+
+                connectedClients.add(client);
                 Unit player = null;
                 if (m.get("id") != null) {
                     // this is a reconnecting client that already has a Unit
@@ -215,6 +222,13 @@ public class ServerController implements IncomingHandler {
             case dealDamage:
             case healDamage:
                 RequestStage rs = (RequestStage) m.get("requestStage");
+                if (rs == null) {
+                    if (broadcastServers(m)) {
+                        // accepted by servers
+                        bf.apply(m);
+                        broadcastClients(m);
+                    }
+                } else
                 switch (rs) {
                     case ask:
                         if (bf.check(m)) {
@@ -251,6 +265,7 @@ public class ServerController implements IncomingHandler {
                             int y = (int)m.get("y");
                             reservedSpot[x][y] = 0;
                         }
+                        return null;
                     default:
                         if (broadcastServers(m)) {
                             // accepted by servers

@@ -6,6 +6,7 @@ import nl.vu.ds17800.core.networking.CommunicationImpl;
 import nl.vu.ds17800.core.networking.Entities.Message;
 import nl.vu.ds17800.core.networking.Entities.Server;
 import nl.vu.ds17800.core.networking.IncomingHandler;
+import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -189,7 +190,7 @@ public class ClientController implements IncomingHandler{
 
 
     @Override
-    public Message handleMessage(Message message) {
+    public Message handleMessage(Message message, PoolEntity connectionEntity) {
         MessageRequest request = (MessageRequest)message.get("request");
 
         switch(request) {

@@ -3,8 +3,6 @@ package nl.vu.ds17800.core.networking;
 import nl.vu.ds17800.core.networking.Entities.Message;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 
 /**
@@ -39,7 +37,7 @@ public class Worker extends Thread{
                     continue;
                 }
                 String messageKey = (String)message.get("__communicationID");
-                message = messageshandler.handleMessage(message);
+                message = messageshandler.handleMessage(message, connectionEntity);
                 if(message == null) {
                     System.out.println("No response!");
                 } else {
