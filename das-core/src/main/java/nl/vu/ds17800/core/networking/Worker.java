@@ -38,6 +38,7 @@ public class Worker extends Thread{
                 if(((String)message.get("__communicationType")).equals(HEARTBEATING))
                     continue;
 
+                System.out.println("Incoming message: " + message);
                 if(((String)message.get("__communicationType")).equals("__response")){
                     synchronized (connectionEntity.responseBuffer){
                         connectionEntity.responseBuffer.add(message);
@@ -47,12 +48,18 @@ public class Worker extends Thread{
                 }
                 String messageKey = (String)message.get("__communicationID");
                 message = messageshandler.handleMessage(message);
+                if(message == null) {
+                    System.out.println("No response!");
+                } else {
+                    System.out.println("Response message to send: " + message);
+                }
 
                 if(message == null)
                     continue;
 
                 message.put("__communicationID", messageKey);
                 message.put("__communicationType", "__response");
+                System.out.println("Sending response! " + message);
                 oout.writeObject(message);
             } catch (IOException e) {
                 return;
