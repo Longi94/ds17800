@@ -3,12 +3,12 @@ package nl.vu.ds17800.client;
 import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.MessageRequest;
 import nl.vu.ds17800.core.networking.CommunicationImpl;
-import nl.vu.ds17800.core.networking.IncomingHandler;
 import nl.vu.ds17800.core.networking.Entities.Message;
 import nl.vu.ds17800.core.networking.Entities.Server;
+import nl.vu.ds17800.core.networking.IncomingHandler;
 
-import java.net.InetAddress;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.net.Socket;
 import java.util.TreeMap;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
@@ -45,7 +45,14 @@ public class ClientController implements IncomingHandler{
 
             try {
                 long startPing = System.currentTimeMillis();
-                boolean serverReachable = InetAddress.getByName(srv.ipaddr).isReachable(SND_MSG_TIMEOUT);
+                boolean serverReachable;
+
+                try (Socket ignored = new Socket(srv.ipaddr, srv.serverPort)) {
+                    serverReachable = true;
+                } catch (IOException ignored) {
+                    serverReachable = false;
+                }
+
                 long endPing = System.currentTimeMillis();
                 if(serverReachable) {
                     pingTime = endPing - startPing;
