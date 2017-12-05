@@ -3,10 +3,7 @@ package nl.vu.ds17800.core.model;
 import nl.vu.ds17800.core.model.units.Unit;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * The actual battlefield where the fighting takes place.
@@ -20,7 +17,7 @@ public class BattleField implements Serializable {
     /* The array of units */
     private Unit[][] map;
 
-    private ArrayList<Unit> units = new ArrayList<>();
+    private List<Unit> units = Collections.synchronizedList(new ArrayList<Unit>());
 
     /**
      * Initialize the battlefield to the default size
