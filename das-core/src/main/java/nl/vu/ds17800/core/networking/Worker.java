@@ -25,6 +25,7 @@ public class Worker extends Thread{
     public void run(){
         ObjectInputStream oin = null;
         ObjectOutputStream oout = null;
+        System.out.println("New connection " + connectionEntity.socket.getInetAddress() + " on port " + connectionEntity.socket.getPort());
         try {
             oin = new ObjectInputStream(connectionEntity.socket.getInputStream());
             oout = new ObjectOutputStream(connectionEntity.socket.getOutputStream());

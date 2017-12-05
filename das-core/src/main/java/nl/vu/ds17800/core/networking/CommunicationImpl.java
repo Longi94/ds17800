@@ -18,10 +18,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by hacku on 11/21/17.
  */
 public class CommunicationImpl implements Communication {
+
+    /**
+     * for 5 servers we use 10100, 10101, 10102, 10102, 10103, 10104...
+     */
+    public static final int LISTEN_PORTRANGE_START = 10100;
+
     private final String    HEARTBEATING = "heartbeating";
     private IncomingHandler incomeHandler;
     private Map<String, PoolEntity> socketPool;
-    private static Integer mesID;
+    private static Integer mesID = 0;
 
     public CommunicationImpl(IncomingHandler handler, Server server){
         // For Servers
@@ -91,7 +97,15 @@ public class CommunicationImpl implements Communication {
     }
 
     public List<Server> getServers(){
-        return new ArrayList<Server>();
+        List<Server> servers = new ArrayList<Server>();
+        Server s;
+        for (int i = 0; i < 5; i++) {
+            s = new Server();
+            s.serverPort = LISTEN_PORTRANGE_START + i;
+            s.ipaddr = "localhost";
+            servers.add(s);
+        }
+        return servers;
     }
 //
 //    public boolean registerServer() {
