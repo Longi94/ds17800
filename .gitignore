@@ -86,3 +86,6 @@ fabric.properties
 
 # DAS build files
 das-*/build/
+
+# runSimulation scripts
+logs/

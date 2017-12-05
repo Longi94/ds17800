@@ -17,5 +17,8 @@ public enum MessageRequest {
     serverDisconnect,
 
     // generic acknowledge message
-    acknowledge
+    acknowledge,
+
+    //list of clients connected to particular server
+    clientListSize
 }
