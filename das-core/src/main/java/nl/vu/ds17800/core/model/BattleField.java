@@ -223,7 +223,8 @@ public class BattleField implements Serializable {
                 break;
             }
             case moveUnit:
-                moveUnit((Unit) action.get("unit"), (Integer) action.get("x"), (Integer) action.get("y"));
+                unit = findUnitById(((Unit) action.get("unit")).getUnitID());
+                moveUnit(unit, (Integer) action.get("x"), (Integer) action.get("y"));
                 break;
             case removeUnit:
                 removeUnit((Integer) action.get("x"), (Integer) action.get("y"));

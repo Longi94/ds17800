@@ -186,7 +186,7 @@ public class ClientController implements IncomingHandler{
         }
 
         try {
-            communication.sendMessage(message, myServer, SND_MSG_TIMEOUT);
+            communication.sendMessageAsync(message, myServer);
         } catch (Exception e) {
             System.out.println("Could not connect to server: " + e.getMessage());
             System.out.println("Trying to reconnect...");
