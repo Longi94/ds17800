@@ -27,7 +27,7 @@ import static nl.vu.ds17800.core.model.RequestStage.commit;
 public class ServerController implements IncomingHandler {
 
     private Communication comm;
-    private BattleField bf;
+    private BattleField bf = new BattleField();
 
     // connected server peers
     private final ArrayList<Server> connectedServers;
