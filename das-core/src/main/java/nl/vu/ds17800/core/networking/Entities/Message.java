@@ -19,7 +19,12 @@ public class Message extends HashMap<String, Object> implements Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append("Message:");
         for (String k : this.keySet()) {
-            sb.append("  " + k + ": " + this.get(k));
+            if(k.equals("battlefield")) {
+                // too long to print
+                sb.append("  " + k + ": <battlefield> \n");
+            } else {
+                sb.append("  " + k + ": " + this.get(k) + "\n");
+            }
         }
         return sb.toString();
     }

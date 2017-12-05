@@ -28,7 +28,7 @@ public class Worker extends Thread{
                 if(((String)message.get("__communicationType")).equals(HEARTBEATING))
                     continue;
 
-                System.out.println("Incoming message: " + message);
+                System.out.println("In:  " + message);
                 if(((String)message.get("__communicationType")).equals("__response")){
                     synchronized (connectionEntity.responseBuffer){
                         connectionEntity.responseBuffer.add(message);
@@ -38,22 +38,19 @@ public class Worker extends Thread{
                 }
                 String messageKey = (String)message.get("__communicationID");
                 message = messageshandler.handleMessage(message, connectionEntity);
-                if(message == null) {
-                    System.out.println("No response!");
-                } else {
-                    System.out.println("Response message to send: " + message);
-                }
 
                 if(message == null)
                     continue;
 
                 message.put("__communicationID", messageKey);
                 message.put("__communicationType", "__response");
-                System.out.println("Sending response! " + message);
+                System.out.println("Out: " + message);
                 connectionEntity.outputStream.writeObject(message);
             } catch (IOException e) {
+                System.out.println("Error: " + e.getMessage());
                 return;
             } catch (ClassNotFoundException e) {
+                System.out.println("Error: " + e.getMessage());
                 return;
             }
         }

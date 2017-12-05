@@ -231,6 +231,7 @@ public class ServerController implements IncomingHandler {
                 } else
                 switch (rs) {
                     case ask:
+                        System.out.println("Asked ");
                         if (bf.check(m)) {
                             // here we need to add the pending message to a priority list based on the the
                             // message timestamps.
@@ -323,6 +324,6 @@ public class ServerController implements IncomingHandler {
             bf = (BattleField) resp.get("battlefield");
         }
 
-        System.out.println("ok got response.." + resp.get("request"));
+        System.out.println("OK! Connected!");
     }
 }

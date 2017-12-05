@@ -242,9 +242,9 @@ public class BattleField implements Serializable {
         Unit unit;
         switch (request) {
             case spawnUnit:
-                return map[(Integer) action.get("x")][(Integer) action.get("y")] != null;
+                return map[(Integer) action.get("x")][(Integer) action.get("y")] == null;
             case putUnit:
-                return map[(Integer) action.get("x")][(Integer) action.get("y")] != null;
+                return map[(Integer) action.get("x")][(Integer) action.get("y")] == null;
             case dealDamage: {
                 int x = (Integer) action.get("x");
                 int y = (Integer) action.get("y");
