@@ -333,19 +333,19 @@ public class BattleField implements Serializable {
     public String toString() {
         StringBuilder builder = new StringBuilder();
 
+        for (int i = 0; i < units.size(); i++) {
+            builder.append(String.format("%3d | ", i)).append(units.get(i)).append('\n');
+        }
+
         for (int i = map.length - 1; i >= 0; i--) {
             for (int j = 0; j < map[i].length; j++) {
                 if (map[j][i] != null) {
-                    builder.append(String.format("%2d", units.indexOf(map[j][i])));
+                    builder.append(String.format("%3d", units.indexOf(map[j][i])));
                 } else {
-                    builder.append(" .");
+                    builder.append("  .");
                 }
             }
             builder.append('\n');
-        }
-
-        for (int i = 0; i < units.size(); i++) {
-            builder.append(String.format("%2d | ", i)).append(units.get(i)).append('\n');
         }
 
         return builder.toString();

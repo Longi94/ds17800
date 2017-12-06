@@ -263,8 +263,8 @@ public class ClientController implements IncomingHandler{
 
                 // spectator
                 if (DasClient.myUnit != null && DasClient.myUnit.getHitPoints() <= 0) {
-                    System.out.println(DasClient.battleField.toString());
                     System.out.println("ME | " + DasClient.myUnit);
+                    System.out.println(DasClient.battleField.toString());
                 }
                 break;
 
