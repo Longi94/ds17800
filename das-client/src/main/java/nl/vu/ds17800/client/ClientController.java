@@ -185,7 +185,7 @@ public class ClientController implements IncomingHandler{
      * After successfull connection battleField and player unit are being set
      * @return succes flag
      */
-    public boolean initialiseConnection(String unitType, int preferredServer) {
+    synchronized public boolean initialiseConnection(String unitType, int preferredServer) {
         Message serverResponse = connectServer(null, unitType, preferredServer);
 
         if(serverResponse == null) return false;
@@ -247,7 +247,7 @@ public class ClientController implements IncomingHandler{
 
 
     @Override
-    public Message handleMessage(Message message, PoolEntity connectionEntity) {
+    synchronized public Message handleMessage(Message message, PoolEntity connectionEntity) {
         MessageRequest request = (MessageRequest)message.get("request");
 
         switch(request) {
