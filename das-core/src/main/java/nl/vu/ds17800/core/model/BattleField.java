@@ -41,13 +41,13 @@ public class BattleField implements Serializable {
      *
      * @return [x, y] or otherwise null if no free position was found
      */
-    public int[] getRandomFreePosition() {
+    public int[] getRandomFreePosition(Random random) {
         int[] pos;
 
         int x, y, attempt = 0;
         do {
-            x = (int) (Math.random() * BattleField.MAP_WIDTH);
-            y = (int) (Math.random() * BattleField.MAP_HEIGHT);
+            x = (int) (random.nextDouble() * BattleField.MAP_WIDTH);
+            y = (int) (random.nextDouble() * BattleField.MAP_HEIGHT);
             attempt++;
         } while (getUnit(x, y) != null && attempt < 10);
 

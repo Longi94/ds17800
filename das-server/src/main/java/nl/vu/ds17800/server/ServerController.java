@@ -157,7 +157,7 @@ public class ServerController implements IncomingHandler {
 
                 if (player == null) {
                     // this is a new client that needs a Player Unit associated
-                    int pos[] = bf.getRandomFreePosition();
+                    int pos[] = bf.getRandomFreePosition(random);
 
                     // BattleField assigns the unit its position, thus -1, -1
                     if (((String)m.get("type")).equals("dragon")) {
@@ -177,7 +177,7 @@ public class ServerController implements IncomingHandler {
                     int retries = 0;
                     int maxRetries = 2;
                     while (!broadcastServers(msgSpawnUnit) && retries < maxRetries) {
-                        pos = bf.getRandomFreePosition();
+                        pos = bf.getRandomFreePosition(random);
                         msgSpawnUnit.put("x", pos[0]);
                         msgSpawnUnit.put("y", pos[1]);
                         retries++;
