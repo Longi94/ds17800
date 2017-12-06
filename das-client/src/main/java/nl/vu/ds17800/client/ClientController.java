@@ -11,7 +11,6 @@ import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -233,12 +232,11 @@ public class ClientController implements IncomingHandler{
         }
 
         try {
-
-            System.out.println("Client: sending message...");
+            if (CommunicationImpl.DEBUG_LOG_ENABLED) {
+                System.out.println("Client: sending message...");
+            }
             communication.sendMessage(message, myServer, SND_MSG_TIMEOUT);
-            System.out.println("Client: message sent successfully");
         } catch (Exception e) {
-            System.out.println("Server not responding!");
             System.out.println("Could not connect to server: " + e.getMessage());
             System.out.println("Trying to reconnect...");
             return reconnectServer(); // return success flag - in that situation current action request is aborted
@@ -262,6 +260,12 @@ public class ClientController implements IncomingHandler{
             case removeUnit:
                 //if message request correspond to battleField actions - pass message to battleField
                 DasClient.battleField.apply(message);
+
+                // spectator
+                if (DasClient.myUnit != null && DasClient.myUnit.getHitPoints() <= 0) {
+                    System.out.println(DasClient.battleField.toString());
+                    System.out.println("ME | " + DasClient.myUnit);
+                }
                 break;
 
             default:

@@ -28,7 +28,9 @@ public class Worker extends Thread{
                 if(((String)message.get(Communication.KEY_COMM_TYPE)).equals(HEARTBEATING))
                     continue;
 
-                System.out.println("<- " + message);
+                if (CommunicationImpl.DEBUG_LOG_ENABLED) {
+                    System.out.println("<- " + message);
+                }
                 if(((String)message.get(Communication.KEY_COMM_TYPE)).equals("__response")){
                     synchronized (connectionEntity.responseBuffer){
                         connectionEntity.responseBuffer.add(message);

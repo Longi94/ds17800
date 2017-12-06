@@ -47,9 +47,12 @@ public class DasServer {
 
     public static void main(String[] args) {
         if(args.length < 1) {
-            System.out.println("Usage: server.jar 10100|10101|10102|10103|10104");
+            System.out.println("Usage: server.jar 10100|10101|10102|10103|10104 [debug]");
             System.exit(1);
         }
+
+        CommunicationImpl.DEBUG_LOG_ENABLED = args.length >= 2;
+
         int port = Integer.parseInt(args[0]);
         Server serverDescr = new Server();
         serverDescr.serverPort = port;

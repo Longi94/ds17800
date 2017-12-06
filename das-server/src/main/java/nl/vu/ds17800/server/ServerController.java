@@ -7,8 +7,10 @@ import nl.vu.ds17800.core.model.units.Dragon;
 import nl.vu.ds17800.core.model.units.Player;
 import nl.vu.ds17800.core.model.units.Unit;
 import nl.vu.ds17800.core.networking.Communication;
+import nl.vu.ds17800.core.networking.CommunicationImpl;
 import nl.vu.ds17800.core.networking.Entities.Client;
 import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Entities.Response;
 import nl.vu.ds17800.core.networking.Entities.Server;
 import nl.vu.ds17800.core.networking.IncomingHandler;
 import nl.vu.ds17800.core.networking.PoolEntity;
@@ -75,21 +77,32 @@ public class ServerController implements IncomingHandler {
     private boolean broadcastServers(Message m) {
         m.put("requestStage", ask);
 
-        for (Server s : connectedServers) {
-            System.out.println("Broadcasting to server " + s);
-            try {
-                Message resp = comm.sendMessage(m, s, 500);
+        Map<Server, Response> responses = new HashMap<>();
 
-                if (resp != null && ((RequestStage)resp.get("requestStage"))== RequestStage.reject) {
-                    // got a response and it was reject! the action did not succeed
-                    return false;
-                }
+        for (Server s : connectedServers) {
+            if (CommunicationImpl.DEBUG_LOG_ENABLED) {
+                System.out.println("Broadcasting to server " + s);
+            }
+            try {
+                responses.put(s, comm.sendMessageAsync(m, s));
             } catch (IOException e) {
                 System.out.println("unhandled: FAILED TO TRANSFER MESSAGE '" + m + "' to server!");
                 e.printStackTrace(System.out);
+            }
+        }
+
+        Message resp = null;
+        for (Map.Entry<Server, Response> entry : responses.entrySet()) {
+            try {
+                resp = entry.getValue().getResponse(500, entry.getKey());
             } catch (InterruptedException e) {
                 System.out.println("Timeout! Assume that it's accepted!");
                 e.printStackTrace();
+            }
+
+            if (resp != null && ((RequestStage)resp.get("requestStage")) == RequestStage.reject) {
+                // got a response and it was reject! the action did not succeed
+                return false;
             }
         }
 
