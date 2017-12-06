@@ -320,7 +320,7 @@ public class BattleField implements Serializable {
 
         for (Unit unit : units) {
             int d = Math.abs(x - unit.getX()) + Math.abs(y - unit.getY());
-            if (unit.getType() == type && d > 0 && d < currentD) {
+            if (unit.getHitPoints() > 0 && unit.getType() == type && d > 0 && d < currentD) {
                 nearestUnit = unit;
                 currentD = d;
             }
