@@ -116,43 +116,13 @@ public class CommunicationImpl implements Communication {
 
     public List<Server> getServers(){
         List<Server> servers = new ArrayList<Server>();
-        /*Server s;
+        Server s;
         for (int i = 0; i < 5; i++) {
             s = new Server();
             s.serverPort = LISTEN_PORTRANGE_START + i;
             s.ipaddr = "127.0.0.1";
             servers.add(s);
-        }*/
-
-        Server server = new Server();
-
-        server.ipaddr = "145.108.92.133";
-        server.serverPort = 10100;
-        servers.add(server);
-
-        server = new Server();
-
-        server.ipaddr = "145.108.92.133";
-        server.serverPort = 10101;
-        servers.add(server);
-
-        server = new Server();
-
-        server.ipaddr = "145.108.232.111";
-        server.serverPort = 10102;
-        servers.add(server);
-
-        server = new Server();
-
-        server.ipaddr = "145.108.232.111";
-        server.serverPort = 10103;
-        servers.add(server);
-
-        server = new Server();
-
-        server.ipaddr = "145.108.232.111";
-        server.serverPort = 10104;
-        servers.add(server);
+        }
         return servers;
     }
 //
