@@ -56,7 +56,7 @@ public class DasServer {
         int port = Integer.parseInt(args[0]);
         Server serverDescr = new Server();
         serverDescr.serverPort = port;
-        serverDescr.ipaddr = "localhost";
+        serverDescr.ipaddr = "127.0.0.1";
 
         new DasServer(serverDescr);
     }

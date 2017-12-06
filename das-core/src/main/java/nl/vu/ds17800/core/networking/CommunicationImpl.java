@@ -120,7 +120,7 @@ public class CommunicationImpl implements Communication {
         for (int i = 0; i < 5; i++) {
             s = new Server();
             s.serverPort = LISTEN_PORTRANGE_START + i;
-            s.ipaddr = "localhost";
+            s.ipaddr = "127.0.0.1";
             servers.add(s);
         }
         return servers;

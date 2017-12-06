@@ -21,7 +21,7 @@ public class Worker extends Thread{
     }
 
     public void run(){
-        System.out.println("New connection " + connectionEntity.socket.getInetAddress() + " on port " + connectionEntity.socket.getPort());
+        System.out.println("New connection " + connectionEntity.socket.getInetAddress().getHostAddress().replace("/", "") + " on port " + connectionEntity.socket.getPort());
         while(true){
             try {
                 Message message = (Message)connectionEntity.inputStream.readObject();

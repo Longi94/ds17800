@@ -55,7 +55,7 @@ public class NetworkRouter extends Thread{
 
 
             synchronized (socketPool){
-                String socketKey = socket.getInetAddress() + ":"+ String.valueOf(socket.getPort());
+                String socketKey = socket.getInetAddress().getHostAddress().replace("/", "") + ":"+ String.valueOf(socket.getPort());
                 PoolEntity existance = socketPool.get(socketKey);
                 if(existance != null){
                     try {

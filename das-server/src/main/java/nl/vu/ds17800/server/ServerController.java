@@ -17,6 +17,7 @@ import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
 import static nl.vu.ds17800.core.model.RequestStage.ask;
@@ -33,7 +34,7 @@ public class ServerController implements IncomingHandler {
 
     private boolean initialized = false;
     // connected server peers
-    private final List<Server> connectedServers;
+    private final Map<String, Server> connectedServers;
 
     private Server serverDescriptor;
 
@@ -52,7 +53,7 @@ public class ServerController implements IncomingHandler {
     }
 
     ServerController(BattleField bf, Server serverDescr) {
-        this.connectedServers = Collections.synchronizedList(new ArrayList<Server>());
+        this.connectedServers = new ConcurrentHashMap<>();
         this.connectedClients = Collections.synchronizedSet(new HashSet<String>());
         reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
         serverDescriptor = serverDescr;
@@ -79,7 +80,7 @@ public class ServerController implements IncomingHandler {
 
         Map<Server, Response> responses = new HashMap<>();
 
-        for (Server s : connectedServers) {
+        for (Server s : connectedServers.values()) {
             if (CommunicationImpl.DEBUG_LOG_ENABLED) {
                 System.out.println("Broadcasting to server " + s);
             }
@@ -109,7 +110,7 @@ public class ServerController implements IncomingHandler {
         m = new Message(m);
         m.put("requestStage", commit);
 
-        for (Server s : connectedServers) {
+        for (Server s : connectedServers.values()) {
             try {
                 comm.sendMessageAsync(m, s);
             } catch (IOException e) {
@@ -199,7 +200,7 @@ public class ServerController implements IncomingHandler {
                     broadcastClients(msgSpawnUnit);
                 }
 
-                connectedClients.add(connectionEntity.socket.getInetAddress().toString() + ":" + connectionEntity.socket.getPort());
+                connectedClients.add(connectionEntity.socket.getInetAddress().getHostAddress().replace("/", "") + ":" + connectionEntity.socket.getPort());
 
                 reply = new Message();
                 reply.put("request", clientConnect);
@@ -241,11 +242,10 @@ public class ServerController implements IncomingHandler {
                 }
                 synchronized (connectedServers){
                     Server newServ = new Server();
-                    newServ.ipaddr = connectionEntity.socket.getInetAddress().toString();
-                    newServ.ipaddr = newServ.ipaddr.replace("127.0.0.1","localhost").replace("/", "");
+                    newServ.ipaddr = connectionEntity.socket.getInetAddress().getHostAddress().replace("/", "");
                     newServ.serverPort = (Integer)m.get("originPort");
                     boolean knownServ = false;
-                    for(Server curSer : connectedServers){
+                    for(Server curSer : connectedServers.values()){
                         if(newServ.equals(curSer))
                             knownServ = true;
                     }
@@ -354,21 +354,8 @@ public class ServerController implements IncomingHandler {
     @Override
     public void connectionLost(String ip, int port) {
         // some node lost connection, we don't really know if it was a client or a server
-
-        ListIterator<Server> sit = connectedServers.listIterator();
-
-        Server serv;
-
-        while (sit.hasNext()) {
-            serv = sit.next();
-
-            if(serv.serverPort == port && serv.ipaddr.equals(ip)) {
-                sit.remove();
-                return;
-            }
-        }
-
         System.out.println("Peer " + ip + ":" + port + " disconnected");
+        connectedServers.remove(ip + ":" + port);
         connectedClients.remove(ip + ":" + port);
     }
 
@@ -381,7 +368,7 @@ public class ServerController implements IncomingHandler {
 
         // if we made it here we are sure it worked
         synchronized (connectedServers){
-            connectedServers.add(s);
+            connectedServers.put(s.ipaddr + ":" + s.serverPort, s);
         }
 
         if (bf == null) {
