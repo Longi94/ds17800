@@ -6,119 +6,97 @@ import nl.vu.ds17800.core.model.RequestStage;
 import nl.vu.ds17800.core.model.units.Dragon;
 import nl.vu.ds17800.core.model.units.Player;
 import nl.vu.ds17800.core.model.units.Unit;
-import nl.vu.ds17800.core.networking.Communication;
-import nl.vu.ds17800.core.networking.CommunicationImpl;
-import nl.vu.ds17800.core.networking.Entities.Client;
+import nl.vu.ds17800.core.networking.Endpoint;
 import nl.vu.ds17800.core.networking.Entities.Message;
-import nl.vu.ds17800.core.networking.Entities.Response;
-import nl.vu.ds17800.core.networking.Entities.Server;
+import nl.vu.ds17800.core.networking.IMessageSendible;
 import nl.vu.ds17800.core.networking.IncomingHandler;
-import nl.vu.ds17800.core.networking.PoolEntity;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
 import static nl.vu.ds17800.core.model.RequestStage.ask;
-import static nl.vu.ds17800.core.model.RequestStage.commit;
 
 /**
  * Handle server interaction
  */
 public class ServerController implements IncomingHandler {
+    private class OutgoingMessage implements Comparable<OutgoingMessage> {
+        private final IMessageSendible recipient;
+        private final Message message;
 
-    private Communication comm;
+        public OutgoingMessage(IMessageSendible recipient, Message message) {
+            this.recipient = recipient;
+            this.message = message;
+        }
+
+        public long getTimestamp() {
+            return (long) message.get("timestamp");
+        }
+
+        public void send() {
+            recipient.sendMessage(message);
+        }
+
+        @Override
+        public int compareTo(OutgoingMessage o) {
+            return (int)(this.getTimestamp() - o.getTimestamp());
+        }
+    }
+
+    private class IncomingMessage extends Message {
+        private final Message message;
+        private final IMessageSendible sender;
+        public IncomingMessage(Message message, IMessageSendible sender) {
+            this.message = message;
+            this.sender = sender;
+        }
+        public IMessageSendible getSender() {
+            return sender;
+        }
+
+        public Message getMessage() {
+            return message;
+        }
+    }
+
     private BattleField bf = new BattleField();
     private Random random;
 
-    private boolean initialized = false;
     // connected server peers
-    private final Map<String, Server> connectedServers;
-
-    private Server serverDescriptor;
+    private final Set<IServerConnection> connectedServers;
 
     // clients connected to this server
-    private final Set<String> connectedClients;
+    private final Set<IClientConnection> connectedClients;
+
+    // messages to handle, sorted by timestamp
+    private final PriorityBlockingQueue<IncomingMessage> incomingMessages;
+
+    // messages to handle, sorted by timestamp
+    private final PriorityBlockingQueue<OutgoingMessage> outgoingMessages;
 
     // here we reserve spots while waiting for a commit
     private final long[][] reservedSpot;
 
-    public boolean isInitialized() {
-        return initialized;
-    }
-
-    public void setInitialized(boolean initialized) {
-        this.initialized = initialized;
-    }
-
-    ServerController(BattleField bf, Server serverDescr) {
-        this.connectedServers = new ConcurrentHashMap<>();
-        this.connectedClients = Collections.synchronizedSet(new HashSet<String>());
-        reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
-        serverDescriptor = serverDescr;
-
-        random = new Random(serverDescr.serverPort);
-    }
-
-    /**
-     * We do this instead of registering the handler on the Communcation instance because it
-     * requires to be created with a IncomingHandler
-     */
-    public void setCommuncation(Communication comm) {
-        this.comm = comm;
+    public ServerController() {
+        this.connectedServers = Collections.synchronizedSet(new HashSet<IServerConnection>());
+        this.connectedClients = Collections.synchronizedSet(new HashSet<IClientConnection>());
+        this.reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
+        this.incomingMessages = new PriorityBlockingQueue<IncomingMessage>();
+        this.outgoingMessages = new PriorityBlockingQueue<OutgoingMessage>();
+        this.random = new Random(123);
     }
 
     /**
      * Broadcast m to all server nodes.
-     * hmm we could send to all including ourselves, that will just loopback anyway?
      * @param m message that will be sent to all servers
      * @return true if all servers accepted the message
      */
-    private boolean broadcastServers(Message m) {
-        m.put("requestStage", ask);
-
-        Map<Server, Response> responses = new HashMap<>();
-
-        for (Server s : connectedServers.values()) {
-            if (CommunicationImpl.DEBUG_LOG_ENABLED) {
-                System.out.println("Broadcasting to server " + s);
-            }
-            try {
-                responses.put(s, comm.sendMessageAsync(m, s));
-            } catch (IOException e) {
-                System.out.println("unhandled: FAILED TO TRANSFER MESSAGE '" + m + "' to server!");
-                e.printStackTrace(System.out);
-            }
+    private void broadcastServers(Message m) {
+        for (IServerConnection s: connectedServers) {
+            outgoingMessages.add(new OutgoingMessage(s, m));
         }
-
-        Message resp = null;
-        for (Map.Entry<Server, Response> entry : responses.entrySet()) {
-            try {
-                resp = entry.getValue().getResponse(500, entry.getKey());
-            } catch (InterruptedException e) {
-                System.out.println("Timeout! Assume that it's accepted!");
-                e.printStackTrace();
-            }
-
-            if (resp != null && ((RequestStage)resp.get("requestStage")) == RequestStage.reject) {
-                // got a response and it was reject! the action did not succeed
-                return false;
-            }
-        }
-
-        m = new Message(m);
-        m.put("requestStage", commit);
-
-        for (Server s : connectedServers.values()) {
-            try {
-                comm.sendMessageAsync(m, s);
-            } catch (IOException e) {
-                System.out.println("unhandled: FAILED TO TRANSFER MESSAGE to server!");
-            }
-        }
-        // do we need to check response from the last send?
-        return true;
     }
 
     /**
@@ -126,20 +104,22 @@ public class ServerController implements IncomingHandler {
      * @param m message to broadcast
      */
     private void broadcastClients(Message m) {
-        m = new Message(m);
-        m.remove("requestStage");
-        for (String c : connectedClients) {
-            try {
-                Client client = new Client();
-                client.ipaddr = c;
-                comm.sendMessageAsync(m, client);
-            } catch (IOException e) {
-                System.out.println("Unable to send message to client");
-            }
+        for (IClientConnection c : connectedClients) {
+            c.sendMessage(m);
         }
     }
 
-    public Message handleMessage(Message m, PoolEntity connectionEntity) {
+    public void handleNextMessage() {
+        IncomingMessage inm = null;
+        try {
+            // blocks until there's a message to take
+            inm = incomingMessages.take();
+        } catch (InterruptedException e) {
+            System.out.println("handleNextMessage Interrupted!");
+            System.exit(-1);
+        }
+        Message m = inm.getMessage();
+
         MessageRequest request = (MessageRequest)m.get("request");
         Message reply = null;
         switch(request) {
@@ -153,12 +133,7 @@ public class ServerController implements IncomingHandler {
                     player = bf.findUnitById((String) m.get("id"));
                 }
 
-
-
                 if (player == null) {
-                    // this is a new client that needs a Player Unit associated
-                    int pos[] = bf.getRandomFreePosition(random);
-
                     // BattleField assigns the unit its position, thus -1, -1
                     if (((String)m.get("type")).equals("dragon")) {
                         player = new Dragon(this.bf.getNewUnitID(),-1, -1, random);
@@ -166,49 +141,23 @@ public class ServerController implements IncomingHandler {
                         player = new Player(this.bf.getNewUnitID(),-1, -1, random);
                     }
 
+                    // this is a new client that needs a Player Unit associated
+                    int pos[] = bf.getRandomFreePosition(random);
                     Message msgSpawnUnit = new Message();
+                    msgSpawnUnit.put("requestStage", ask);
                     msgSpawnUnit.put("request", spawnUnit);
                     msgSpawnUnit.put("unit", player);
                     msgSpawnUnit.put("x", pos[0]);
                     msgSpawnUnit.put("y", pos[1]);
-
-                    // Broadcast to the other servers, try a new position if we're really unlucky and some
-                    // other client already took the spot
-                    int retries = 0;
-                    int maxRetries = 2;
-                    while (!broadcastServers(msgSpawnUnit) && retries < maxRetries) {
-                        pos = bf.getRandomFreePosition(random);
-                        msgSpawnUnit.put("x", pos[0]);
-                        msgSpawnUnit.put("y", pos[1]);
-                        retries++;
-                    }
-
-                    if (retries == maxRetries) {
-                        // 2 different positions were rejected! that is just unbelievable!
-                        reply = new Message();
-                        reply.put("request", clientConnect);
-                        reply.put("error", "unable to spawn new unit");
-                        // return to the requester
-                        return reply;
-                    }
-
-                    // all servers have accepted the spawn message and should have updated their state accordingly,
-                    // so we can apply it here as well!
-                    bf.apply(msgSpawnUnit);
-
-                    // well there might be some junk left on the message but..
-                    broadcastClients(msgSpawnUnit);
+                    broadcastServers(msgSpawnUnit);
                 }
-
-                connectedClients.add(connectionEntity.socket.getInetAddress().getHostAddress().replace("/", "") + ":" + connectionEntity.socket.getPort());
 
                 reply = new Message();
                 reply.put("request", clientConnect);
                 reply.put("id", player.getUnitID());
-
-                // hmm we could just pass the unit map instead...
                 reply.put("battlefield", bf);
-                return reply;
+                outgoingMessages.add(new OutgoingMessage(inm.getSender(), reply));
+                return;
             case clientDisconnect:
                 // client gracefully disconnected! he is no longer part of the game, so we remove it
                 Message msgRemoveUnit = new Message();
@@ -222,78 +171,34 @@ public class ServerController implements IncomingHandler {
                 broadcastClients(msgRemoveUnit);
                 reply = new Message();
                 reply.put("request", clientDisconnect);
+                outgoingMessages.add(new OutgoingMessage(inm.getSender(), reply));
 
-                return reply;
+                return;
             case serverConnect:
                 // server node connected,
                 // add to server broadcast list
                 // transfer state
                 reply = new Message();
                 reply.put("request", serverConnect);
-                reply.put(Communication.KEY_COMM_TYPE, "__response");
-                reply.put(Communication.KEY_COMM_ID, m.get(Communication.KEY_COMM_ID));
                 reply.put("battlefield", bf);
-                try{
-                    synchronized (connectionEntity.outputStream){
-                        connectionEntity.outputStream.writeObject(reply);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                synchronized (connectedServers){
-                    Server newServ = new Server();
-                    newServ.ipaddr = connectionEntity.socket.getInetAddress().getHostAddress().replace("/", "");
-                    newServ.serverPort = (Integer)m.get("originPort");
-                    boolean knownServ = false;
-                    for(Server curSer : connectedServers.values()){
-                        if(newServ.equals(curSer))
-                            knownServ = true;
-                    }
-                    if((!knownServ) && isInitialized()){
-                        try {
-                            connectServer(newServ);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-
-                return null;
+                outgoingMessages.add(new OutgoingMessage(inm.getSender(), reply));
+                return;
             case serverDisconnect:
                 // server node disconnected
                 // what remove from broadcast list?
 
                 // connectedServers.remove();
-                return null;
+                return;
             case spawnUnit:
             case moveUnit:
             case putUnit:
             case removeUnit:
             case dealDamage:
             case healDamage:
-
                 RequestStage rs = (RequestStage) m.get("requestStage");
                 if (rs == null) {
-                    try {
-                        Message ack = new Message();
-                        ack.put(Communication.KEY_COMM_ID, m.get(Communication.KEY_COMM_ID));
-                        ack.put(Communication.KEY_COMM_TYPE, "__response");
-                        ack.put("request", acknowledge);
-                        synchronized (connectionEntity.outputStream){
-                            connectionEntity.outputStream.writeObject(ack);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    if (broadcastServers(m)) {
-                        // accepted by servers
-                        bf.apply(m);
-                        broadcastClients(m);
-                    }
-                    return null;
+                    m.put("requestStage", ask);
+                    broadcastServers(m);
                 } else {
                     switch (rs) {
                         case ask:
@@ -314,15 +219,15 @@ public class ServerController implements IncomingHandler {
                                         // we have reserved this spot already! so reject!
                                         m.put("requestStage", RequestStage.reject);
                                     }
+                                } else {
+                                    // this message seems valid to us!
+                                    m.put("requestStage", RequestStage.accept);
                                 }
-
-                                // this message seems valid to us!
-                                m.put("requestStage", RequestStage.accept);
                             } else {
                                 m.put("requestStage", RequestStage.reject);
                             }
-
-                            return Message.ack(m);
+                            outgoingMessages.add(new OutgoingMessage(inm.getSender(), m));
+                            return;
                         case commit:
                             bf.apply(m);
                             broadcastClients(m);
@@ -331,27 +236,21 @@ public class ServerController implements IncomingHandler {
                                 int y = (int)m.get("y");
                                 reservedSpot[x][y] = 0;
                             }
-                            return Message.ack(m);
+                            return;
+                        case accept:
+                            // what case is this???
+                            // accept?
+                            // check how many accepts we got or something
+                            return;
                         default:
-                            if (broadcastServers(m)) {
-                                // accepted by servers
-                                bf.apply(m);
-                                broadcastClients(m);
-                            }
-                            return Message.ack(m);
+                            // nop
                     }
                 }
-          case clientListSize:
-            reply = new Message();
-            reply.put("amount", this.connectedClients.size());
-
-            return reply;
             default:
-                return Message.ack(m);
+                return;
         }
     }
 
-    @Override
     public void connectionLost(String ip, int port) {
         // some node lost connection, we don't really know if it was a client or a server
         System.out.println("Peer " + ip + ":" + port + " disconnected");
@@ -359,10 +258,10 @@ public class ServerController implements IncomingHandler {
         connectedClients.remove(ip + ":" + port);
     }
 
-    public void connectServer(Server s) throws IOException, InterruptedException {
+    public void connectServer(Endpoint s) throws IOException, InterruptedException {
         Message m = new Message();
         m.put("request", serverConnect);
-        m.put("originPort", serverDescriptor.serverPort);
+        //m.put("originPort", serverDescriptor.serverPort);
         Message resp = null;
         resp = comm.sendMessage(m, s, 1000);
 
@@ -378,4 +277,18 @@ public class ServerController implements IncomingHandler {
 
         System.out.println("OK! Connected!");
     }
+
+    public void addClient(IClientConnection c) {
+        connectedClients.add(c);
+    }
+    public void removeClient(IClientConnection c) {
+        connectedClients.remove(c);
+    }
+
+    @Override
+    public void handleMessage(Message message, IMessageSendible from) {
+        // handle messages on a separate thread
+        incomingMessages.add(new IncomingMessage(message, from));
+    }
+
 }

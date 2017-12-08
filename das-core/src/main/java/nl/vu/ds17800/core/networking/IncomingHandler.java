@@ -11,9 +11,7 @@ public interface IncomingHandler {
     /**
      * callback for handling message
      * @param message - Message object
-     * @param connectionEntity
      * @return
      */
-    public Message handleMessage(Message message, PoolEntity connectionEntity);
-    public void connectionLost(String ipaddr, int port);
+    public void handleMessage(Message message, IMessageSendible sender);
 }

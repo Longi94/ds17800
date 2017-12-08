@@ -1,11 +1,15 @@
 package nl.vu.ds17800.core.networking.Entities;
 
+import nl.vu.ds17800.core.model.MessageRequest;
+import nl.vu.ds17800.core.model.units.Unit;
+
 import java.io.Serializable;
 import java.util.HashMap;
 
 import static nl.vu.ds17800.core.model.MessageRequest.acknowledge;
 
-public class Message extends HashMap<String, Object> implements Serializable {
+public class Message extends HashMap<String, Object> implements Serializable, Comparable<Message> {
+
     /**
      * Message class is a regular HashMap with String key and Object value;
      * Some keys are reserved for internal using:
@@ -16,10 +20,8 @@ public class Message extends HashMap<String, Object> implements Serializable {
         super();
         this.put("timestamp", System.currentTimeMillis());
     }
-    public Message(Message m) {
-        super(m);
-    }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (String k : this.keySet()) {
@@ -33,6 +35,14 @@ public class Message extends HashMap<String, Object> implements Serializable {
         return sb.toString();
     }
 
+    @Override
+    public int compareTo(Message o) {
+        // messages are ordered by their timestamp, we use this to order message queues
+        long t1 = (long)this.get("timestamp");
+        long t2 = (long)o.get("timestamp");
+        return (int)(t1 - t2);
+    }
+
     /**
      * convenience constructor for creating an ack Message
      * @param message
@@ -41,6 +51,58 @@ public class Message extends HashMap<String, Object> implements Serializable {
     public static Message ack(Message message) {
         Message m = new Message();
         m.put("request", acknowledge);
+        return m;
+    }
+
+    public static Message ping() {
+        Message m = new Message();
+        m.put("request", MessageRequest.ping);
+        return m;
+    }
+
+    public static Message pong() {
+        Message m = new Message();
+        m.put("request", MessageRequest.pong);
+        return m;
+    }
+
+    public static Message dealDamage(int x, int y, int attackPoints) {
+        Message m = new Message();
+        m.put("request", MessageRequest.dealDamage);
+        m.put("x", x);
+        m.put("y", y);
+        m.put("damage", attackPoints);
+        return m;
+    }
+
+    public static Message clientDisconnect(String unitId) {
+        Message m = new Message();
+        m.put("request", MessageRequest.clientDisconnect);
+        m.put("id", unitId);
+        return m;
+    }
+
+    public static Message nop() {
+        Message m = new Message();
+        m.put("request", MessageRequest.nop);
+        return m;
+    }
+
+    public static Message moveUnit(Unit unit, int x, int y) {
+        Message m = new Message();
+        m.put("request", MessageRequest.moveUnit);
+        m.put("unit", unit);
+        m.put("x", x);
+        m.put("y", y);
+        return m;
+    }
+
+    public static Message healDamage(int x, int y, int attackPoints) {
+        Message m = new Message();
+        m.put("request", MessageRequest.healDamage);
+        m.put("x", x);
+        m.put("y", y);
+        m.put("healed", attackPoints);
         return m;
     }
 }

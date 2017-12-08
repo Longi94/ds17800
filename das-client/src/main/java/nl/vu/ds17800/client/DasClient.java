@@ -1,8 +1,10 @@
 package nl.vu.ds17800.client;
 
-import nl.vu.ds17800.core.model.BattleField;
-import nl.vu.ds17800.core.model.units.Unit;
-import nl.vu.ds17800.core.networking.CommunicationImpl;
+import nl.vu.ds17800.core.networking.Endpoint;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -10,24 +12,72 @@ import nl.vu.ds17800.core.networking.CommunicationImpl;
  * @since 2017-11-16
  */
 public class DasClient {
+    public final static List<Endpoint> SERVERS = Arrays.asList(
+            new Endpoint("localhost",10100),
+            new Endpoint("localhost",10101),
+            new Endpoint("localhost",10102),
+            new Endpoint("localhost",10103),
+            new Endpoint("localhost",10104)
+    );
 
-    // Static stuff to be shared both with simulation thread and ClientController threads (is this approach correct?)
-    public static BattleField battleField = new BattleField();
-    public static ClientController clientController = new ClientController();
-    public static Unit myUnit;
+    private String unitId = null;
+
+    public DasClient(String unitType) {
+        Endpoint server;
+        ClientController clientController;
+        ServerConnection serverConnection;
+
+        while(true) {
+            // Set up (re-)connection
+            server = ClientController.getServerToConnect(SERVERS);
+            clientController = new ClientController();
+            serverConnection = new ServerConnection(server, clientController);
+            try {
+                serverConnection.listenSocket();
+
+                // blocking until we get initial data from server
+                serverConnection.initializeClientUnit(unitType, unitId);
+            } catch (Exception e) {
+                System.out.println("Connection error: " + e.getMessage() + ". Will reconnect... ");
+                // start over, make a new connection
+                continue;
+            }
+
+            // save the unit id in case we need to reconnect
+            unitId = clientController.getUnit().getUnitID();
+
+            while (true) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    System.out.println("Sleep interrupted!");
+                }
+
+                // apply any incoming message we might have in the socket buffer
+                try {
+                    serverConnection.consumeIncomingMessages();
+                } catch (Exception e) {
+                    System.out.println("Connection error: " + e.getMessage() + ". Will reconnect... ");
+                    // break out of the game loop, reconnect and hope everything will be ok again
+                    break;
+                }
+
+                // run next client action
+                serverConnection.sendMessage(clientController.getNextMessage());
+            }
+        }
+    }
+
 
     public static void main(String[] args) {
 
+
         if (args.length < 1){
-            System.out.println("Input: <dragon/player> [preferred_server] [debug]");
+            System.out.println("Input: <dragon/player> [debug]");
             return;
         }
 
-        CommunicationImpl.DEBUG_LOG_ENABLED = args.length >= 3;
-
         String unitType = args[0];
-        int preferredServer = args.length >= 2 ? Integer.parseInt(args[1]) : -1;
-
 
         if(!(unitType.equals("dragon") || unitType.equals("player"))) {
             System.out.println("Wrong unit type!");
@@ -36,22 +86,6 @@ public class DasClient {
         System.out.println("Unit Type: " + unitType);
         System.out.println("Running...");
 
-        Boolean success = clientController.initialiseConnection(unitType, preferredServer);
-
-        if(success) {
-            System.out.println("Server connection set");
-            System.out.println("Launching simulation..");
-            Thread simulation;
-            if(unitType.equals("player")) {
-                simulation = new Thread(new PlayerController());
-            } else {
-                simulation = new Thread(new DragonController());
-            }
-            simulation.start();
-            System.out.println("Simulation launched.");
-        } else {
-            System.out.println("Game launching failed");
-        }
-
+        new DasClient(unitType);
     }
 }
