@@ -90,6 +90,12 @@ public class ClientWorker implements Runnable, IClientConnection {
                 }
             }
 
+            if ((MessageRequest) m.get("request") == MessageRequest.nop ) {
+                // the client just sent a nop, either to keep connection alive or because did not
+                // want to make a move
+                continue;
+            }
+
 
             // we use the time of receiving the message to be fair. Clients can have crazy
             // clocks and bad latency which will penalize them rather than other players
