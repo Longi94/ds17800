@@ -34,8 +34,6 @@ public class DasClient {
             serverConnection = new ServerConnection(server, clientController);
             try {
                 serverConnection.listenSocket();
-
-                // blocking until we get initial data from server
                 serverConnection.initializeClientUnit(unitType, unitId);
             } catch (Exception e) {
                 System.out.println("Connection error: " + e.getMessage() + ". Will reconnect... ");

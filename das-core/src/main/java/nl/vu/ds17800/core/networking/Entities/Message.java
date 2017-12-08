@@ -1,6 +1,7 @@
 package nl.vu.ds17800.core.networking.Entities;
 
 import nl.vu.ds17800.core.model.MessageRequest;
+import nl.vu.ds17800.core.model.RequestStage;
 import nl.vu.ds17800.core.model.units.Unit;
 
 import java.io.Serializable;
@@ -12,13 +13,18 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
 
     /**
      * Message class is a regular HashMap with String key and Object value;
-     * Some keys are reserved for internal using:
-     * __communicationType - describes which type of message it is;(possible values: __response, __request)
-     * __communicationID - describe id of message; Needed for distinguishing different responses for different requests;
      */
     public Message() {
         super();
         this.put("timestamp", System.currentTimeMillis());
+    }
+
+    /**
+     * Copy constructor, makes a shallow copy
+     * @param m make copy of
+     */
+    public Message(Message m) {
+        super(m);
     }
 
     @Override
@@ -104,5 +110,27 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
         m.put("y", y);
         m.put("healed", attackPoints);
         return m;
+    }
+
+    public static Message toRequestStage(Message m, RequestStage rs) {
+        Message msg = new Message(m);
+        msg.put("requestStage", rs);
+        return msg;
+    }
+
+    public static Message ask(Message m) {
+        return Message.toRequestStage(m, RequestStage.ask);
+    }
+
+    public static Message reject(Message m) {
+        return Message.toRequestStage(m, RequestStage.reject);
+    }
+
+    public static Message accept(Message m) {
+        return Message.toRequestStage(m, RequestStage.accept);
+    }
+
+    public static Message commit(Message m) {
+        return Message.toRequestStage(m, RequestStage.commit);
     }
 }

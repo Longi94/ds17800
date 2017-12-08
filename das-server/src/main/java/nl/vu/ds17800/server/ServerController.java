@@ -6,10 +6,8 @@ import nl.vu.ds17800.core.model.RequestStage;
 import nl.vu.ds17800.core.model.units.Dragon;
 import nl.vu.ds17800.core.model.units.Player;
 import nl.vu.ds17800.core.model.units.Unit;
-import nl.vu.ds17800.core.networking.Endpoint;
+import nl.vu.ds17800.core.networking.*;
 import nl.vu.ds17800.core.networking.Entities.Message;
-import nl.vu.ds17800.core.networking.IMessageSendible;
-import nl.vu.ds17800.core.networking.IncomingHandler;
 
 import java.io.IOException;
 import java.util.*;
@@ -22,44 +20,7 @@ import static nl.vu.ds17800.core.model.RequestStage.ask;
  * Handle server interaction
  */
 public class ServerController implements IncomingHandler {
-    private class OutgoingMessage implements Comparable<OutgoingMessage> {
-        private final IMessageSendible recipient;
-        private final Message message;
 
-        public OutgoingMessage(IMessageSendible recipient, Message message) {
-            this.recipient = recipient;
-            this.message = message;
-        }
-
-        public long getTimestamp() {
-            return (long) message.get("timestamp");
-        }
-
-        public void send() {
-            recipient.sendMessage(message);
-        }
-
-        @Override
-        public int compareTo(OutgoingMessage o) {
-            return (int)(this.getTimestamp() - o.getTimestamp());
-        }
-    }
-
-    private class IncomingMessage extends Message {
-        private final Message message;
-        private final IMessageSendible sender;
-        public IncomingMessage(Message message, IMessageSendible sender) {
-            this.message = message;
-            this.sender = sender;
-        }
-        public IMessageSendible getSender() {
-            return sender;
-        }
-
-        public Message getMessage() {
-            return message;
-        }
-    }
 
     private BattleField bf = new BattleField();
     private Random random;
@@ -105,7 +66,14 @@ public class ServerController implements IncomingHandler {
      */
     private void broadcastClients(Message m) {
         for (IClientConnection c : connectedClients) {
-            c.sendMessage(m);
+            outgoingMessages.add(new OutgoingMessage(c, m));
+        }
+    }
+
+    public void flushOutgoingMessages() {
+        OutgoingMessage outm;
+        while((outm = outgoingMessages.poll()) != null) {
+            outm.send();
         }
     }
 
@@ -197,36 +165,20 @@ public class ServerController implements IncomingHandler {
             case healDamage:
                 RequestStage rs = (RequestStage) m.get("requestStage");
                 if (rs == null) {
-                    m.put("requestStage", ask);
-                    broadcastServers(m);
+                    // one of our client requested an action, ask the our server peers if they're accept it
+                    if (bf.check(m)) {
+                        broadcastServers(Message.ask(m));
+                    } else {
+                        // the client sent a message that can't even be applied
+                        // to our own battlefield! He must be totally out of sync?
+                        outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.reject(m)));
+                    }
                 } else {
+                    // this is a server sent message, it can be that a server
+                    // has accepted, rejected, or requests a commit an update
                     switch (rs) {
                         case ask:
-                            if (bf.check(m)) {
-                                // here we need to add the pending message to a priority list based on the the
-                                // message timestamps.
-
-                                if (request == moveUnit || request == spawnUnit) {
-                                    // these are the only interactions that requires us to reserve a space
-                                    long t = (long)m.get("timestamp");
-                                    int x = (int)m.get("x");
-                                    int y = (int)m.get("y");
-
-                                    if (reservedSpot[x][y] != 0 && t < reservedSpot[x][y]) {
-                                        // this event is more recent so we will use this!
-                                        reservedSpot[x][y] = t;
-                                    } else {
-                                        // we have reserved this spot already! so reject!
-                                        m.put("requestStage", RequestStage.reject);
-                                    }
-                                } else {
-                                    // this message seems valid to us!
-                                    m.put("requestStage", RequestStage.accept);
-                                }
-                            } else {
-                                m.put("requestStage", RequestStage.reject);
-                            }
-                            outgoingMessages.add(new OutgoingMessage(inm.getSender(), m));
+                            handleServerAsk(inm);
                             return;
                         case commit:
                             bf.apply(m);
@@ -241,6 +193,11 @@ public class ServerController implements IncomingHandler {
                             // what case is this???
                             // accept?
                             // check how many accepts we got or something
+                            //pendingMessages.add();
+                            return;
+                        case reject:
+                            // some server rejected our message, so we may have to tell our client but it should
+                            // eventually get the conflicting message and see for himself why it was rejected
                             return;
                         default:
                             // nop
@@ -251,31 +208,32 @@ public class ServerController implements IncomingHandler {
         }
     }
 
-    public void connectionLost(String ip, int port) {
-        // some node lost connection, we don't really know if it was a client or a server
-        System.out.println("Peer " + ip + ":" + port + " disconnected");
-        connectedServers.remove(ip + ":" + port);
-        connectedClients.remove(ip + ":" + port);
-    }
-
-    public void connectServer(Endpoint s) throws IOException, InterruptedException {
-        Message m = new Message();
-        m.put("request", serverConnect);
-        //m.put("originPort", serverDescriptor.serverPort);
-        Message resp = null;
-        resp = comm.sendMessage(m, s, 1000);
-
-        // if we made it here we are sure it worked
-        synchronized (connectedServers){
-            connectedServers.put(s.ipaddr + ":" + s.serverPort, s);
+    public void handleServerAsk(IncomingMessage inm) {
+        Message m = inm.getMessage();
+        MessageRequest request = (MessageRequest)m.get("request");
+        if (!bf.check(m)) {
+            outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.reject(m)));
+            return;
         }
 
-        if (bf == null) {
-            // We have not set up the BattleField instance
-            bf = (BattleField) resp.get("battlefield");
+        if (request != moveUnit && request != spawnUnit) {
+            // this message seems valid to us!
+            outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.accept(m)));
+            return;
         }
+        // these are the only interactions that requires us to reserve a space
+        long t = (long) m.get("timestamp");
+        int x = (int) m.get("x");
+        int y = (int) m.get("y");
 
-        System.out.println("OK! Connected!");
+        if (reservedSpot[x][y] != 0 && t < reservedSpot[x][y]) {
+            // this event is more recent so we will use this!
+            reservedSpot[x][y] = t;
+            outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.accept(m)));
+        } else {
+            // we have reserved this spot already! so reject!
+            outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.reject(m)));
+        }
     }
 
     public void addClient(IClientConnection c) {
@@ -286,9 +244,9 @@ public class ServerController implements IncomingHandler {
     }
 
     @Override
-    public void handleMessage(Message message, IMessageSendible from) {
+    public void handleMessage(IncomingMessage inm) {
         // handle messages on a separate thread
-        incomingMessages.add(new IncomingMessage(message, from));
+        incomingMessages.add(inm);
     }
 
 }

@@ -2,7 +2,8 @@ package nl.vu.ds17800.server;
 
 import nl.vu.ds17800.core.model.MessageRequest;
 import nl.vu.ds17800.core.networking.Entities.Message;
-import nl.vu.ds17800.core.networking.IncomingHandler;
+import nl.vu.ds17800.core.networking.IncomingMessage;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -94,7 +95,7 @@ public class ClientWorker implements Runnable, IClientConnection {
             // clocks and bad latency which will penalize them rather than other players
             m.put("timestamp", System.currentTimeMillis());
 
-            serverController.handleMessage(m, this);
+            serverController.handleMessage(new IncomingMessage(m, this));
         }
     }
 

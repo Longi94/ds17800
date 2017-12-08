@@ -1,7 +1,5 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.Entities.Message;
-
 /**
  * interface describing regular behaviour of object which will be used
  * as a set of callbacks for handling incoming messages from other nodes
@@ -13,5 +11,5 @@ public interface IncomingHandler {
      * @param message - Message object
      * @return
      */
-    public void handleMessage(Message message, IMessageSendible sender);
+    public void handleMessage(IncomingMessage message);
 }
