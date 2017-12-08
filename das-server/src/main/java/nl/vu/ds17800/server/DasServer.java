@@ -29,7 +29,10 @@ public class DasServer {
         }).start();
 
         while(true) {
+            // handle next incoming messages
             sc.handleNextMessage();
+            // flush any outgoing messages
+            sc.flushOutgoingMessages();
         }
     }
 

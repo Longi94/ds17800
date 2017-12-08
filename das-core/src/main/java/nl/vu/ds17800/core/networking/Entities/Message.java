@@ -6,6 +6,7 @@ import nl.vu.ds17800.core.model.units.Unit;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.UUID;
 
 import static nl.vu.ds17800.core.model.MessageRequest.acknowledge;
 
@@ -119,7 +120,13 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
     }
 
     public static Message ask(Message m) {
-        return Message.toRequestStage(m, RequestStage.ask);
+        Message askMsg = Message.toRequestStage(m, RequestStage.ask);
+
+        // This message now needs a reference so that it can be referenced by
+        // the state machine handling the message stages
+        askMsg.put("ref", UUID.randomUUID());
+
+        return askMsg;
     }
 
     public static Message reject(Message m) {
