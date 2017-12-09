@@ -1,6 +1,6 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.Entities.Message;
+import java.io.IOException;
 
 public class OutgoingMessage implements Comparable<OutgoingMessage> {
     private final IMessageSendable recipient;
@@ -19,7 +19,7 @@ public class OutgoingMessage implements Comparable<OutgoingMessage> {
         return (long) message.get("timestamp");
     }
 
-    public void send() {
+    public void send() throws IOException {
         recipient.sendMessage(message);
     }
 

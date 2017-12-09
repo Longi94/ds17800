@@ -1,4 +1,4 @@
-package nl.vu.ds17800.core.networking.Entities;
+package nl.vu.ds17800.core.networking;
 
 import nl.vu.ds17800.core.model.MessageRequest;
 import nl.vu.ds17800.core.model.RequestStage;
@@ -34,11 +34,12 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
         for (String k : this.keySet()) {
             if(k.equals("battlefield")) {
                 // too long to print
-                sb.append("  " + k + ": <battlefield>");
+                sb.append(k + ": <battlefield> , ");
             } else {
-                sb.append("  " + k + ": " + this.get(k));
+                sb.append(k + ": " + this.get(k) + ", ");
             }
         }
+        sb.setLength(sb.length() - 2);
         return sb.toString();
     }
 
@@ -139,5 +140,14 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
 
     public static Message commit(Message m) {
         return Message.toRequestStage(m, RequestStage.commit);
+    }
+
+    public static Message spawnUnit(Unit u, int x, int y) {
+        Message m = new Message();
+        m.put("request", MessageRequest.spawnUnit);
+        m.put("unit", u);
+        m.put("x", x);
+        m.put("y", y);
+        return m;
     }
 }

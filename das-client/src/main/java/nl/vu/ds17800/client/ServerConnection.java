@@ -2,7 +2,7 @@ package nl.vu.ds17800.client;
 
 import nl.vu.ds17800.core.model.MessageRequest;
 import nl.vu.ds17800.core.networking.Endpoint;
-import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Message;
 import nl.vu.ds17800.core.networking.IMessageSendable;
 import nl.vu.ds17800.core.networking.IncomingHandler;
 import nl.vu.ds17800.core.networking.IncomingMessage;
@@ -42,28 +42,58 @@ public class ServerConnection implements IMessageSendable {
             message.put("type", unitType);
         }
 
+        System.out.println("SEND> " +message);
         output.writeObject(message);
 
         // blocking until we get response
         Message response = (Message)input.readObject();
+        System.out.println("RECV> " + response);
 
         incomingHandler.handleMessage(new IncomingMessage(response, this));
     }
 
-    public void consumeIncomingMessages() throws IOException, ClassNotFoundException {
-        Message m;
-        while (input.available() > 0) {
-            // messages in the buffer
-            incomingHandler.handleMessage(new IncomingMessage((Message)input.readObject(), this));
+    @Override
+    public void sendMessage(Message m) throws IOException {
+        System.out.println("SEND> " +m);
+
+        output.writeObject(m);
+    }
+
+    public void close() {
+        try {
+            input.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            output.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            server.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    @Override
-    public void sendMessage(Message m) {
-        try {
-            output.writeObject(m);
-        } catch (IOException e) {
-            System.out.println("unable to write message to socket!");
-        }
+    public void startListenerThread() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (server.isConnected() && !server.isClosed()) {
+                    try {
+                        Message m = (Message)input.readObject();
+                        // messages in the buffer
+                        System.out.println("RECV> " + m);
+                        incomingHandler.handleMessage(new IncomingMessage(m, null));
+                    } catch (Exception e) {
+                        System.err.println("unhandled: Problem receiving! wtf?!");
+                        close();
+                    }
+                }
+                System.out.println("No more listening! :)");
+            }
+        }).start();
     }
 }

@@ -11,7 +11,7 @@ public class SocketListener {
     private final IConnectionHandler connectionHandler;
     private ServerSocket socket;
 
-    SocketListener(IConnectionHandler connectionHandler) {
+    public SocketListener(IConnectionHandler connectionHandler) {
         this.connectionHandler = connectionHandler;
     }
 

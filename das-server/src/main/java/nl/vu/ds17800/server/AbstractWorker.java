@@ -1,7 +1,7 @@
 package nl.vu.ds17800.server;
 
 import nl.vu.ds17800.core.model.MessageRequest;
-import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Message;
 import nl.vu.ds17800.core.networking.IMessageSendable;
 import nl.vu.ds17800.core.networking.IncomingMessage;
 
@@ -60,7 +60,7 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
                 break;
             } catch (IOException e) {
                 // If a client closes the socket we end here
-                System.err.println("Remote disconnected!");
+                System.err.println("Remote disconnected: " + e.getMessage());
                 break;
             } catch (ClassNotFoundException e) {
                 System.err.println("Unable to cast incoming Object to Message");
@@ -102,6 +102,7 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
 
     @Override
     public void sendMessage(Message m) {
+        System.out.println("SEND> "+m);
         try {
             output.writeObject(m);
         } catch (IOException e) {

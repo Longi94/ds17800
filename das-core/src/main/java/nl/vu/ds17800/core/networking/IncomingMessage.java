@@ -1,7 +1,5 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.Entities.Message;
-
 public class IncomingMessage implements Comparable<IncomingMessage> {
     private final Message message;
     private final IMessageSendable sender;

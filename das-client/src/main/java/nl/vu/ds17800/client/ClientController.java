@@ -5,36 +5,52 @@ import nl.vu.ds17800.core.model.MessageRequest;
 import nl.vu.ds17800.core.model.units.Dragon;
 import nl.vu.ds17800.core.model.units.Unit;
 import nl.vu.ds17800.core.networking.Endpoint;
-import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Message;
 import nl.vu.ds17800.core.networking.IncomingHandler;
+import nl.vu.ds17800.core.networking.IncomingMessage;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.*;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
 
 public class ClientController implements IncomingHandler {
 
     private Unit unit;
+    private String unitId;
     private BattleField battleField;
     private IUnitController unitController;
+    private final PriorityBlockingQueue<Message> incomingMessages;
 
     public ClientController() {
+        incomingMessages = new PriorityBlockingQueue<>();
     }
 
-    public Unit getUnit() {
-        return unit;
+    public String getUnitID() {
+        return unitId;
     }
 
+    /**
+     * get next message to execute from this client
+     * @return Message to be sent to server
+     */
     public Message getNextMessage() {
-        return this.unitController.makeAction();
+        if(!isSpawned()) {
+            return Message.nop();
+        }
+        return unitController.makeAction();
     }
 
     @Override
-    public void handleMessage(Message message) {
+    public void handleMessage(IncomingMessage inm) {
+        incomingMessages.add(inm.getMessage());
+    }
+
+    public void applyMessage(Message message) {
         MessageRequest request = (MessageRequest)message.get("request");
 
         if (battleField == null && request != clientConnect) {
@@ -44,15 +60,19 @@ public class ClientController implements IncomingHandler {
 
         switch(request) {
             case clientConnect:
-                battleField = (BattleField) message.get("battleField");
-                unit = (Unit) message.get("unit");
-                if (unit instanceof Dragon) {
-                    unitController = new DragonController(battleField, unit);
-                } else {
-                    unitController = new PlayerController(battleField, unit);
-                }
+                battleField = (BattleField) message.get("battlefield");
+                unitId = (String)message.get("id");
                 break;
             case spawnUnit:
+                Unit u = (Unit)message.get("unit");
+                if (u.getUnitID().equals(unitId)) {
+                    unit = u;
+                    if (unit instanceof Dragon) {
+                        unitController = new DragonController(battleField, unit);
+                    } else {
+                        unitController = new PlayerController(battleField, unit);
+                    }
+                }
             case putUnit:
             case healDamage:
             case dealDamage:
@@ -108,7 +128,7 @@ public class ClientController implements IncomingHandler {
                 output.writeObject(msgPing);
                 msgPong = (Message)input.readObject();
             } catch (IOException e) {
-                System.err.println("unavailable! " + srv);
+                System.err.println("unavailable!");
                 continue;
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -134,5 +154,16 @@ public class ClientController implements IncomingHandler {
         }
 
         return result;
+    }
+
+    public boolean isSpawned() {
+        return battleField != null && unitId != null && battleField.findUnitById(unitId) != null;
+    }
+
+    public void applyIncomingMessages() {
+        Message m;
+        while ((m = incomingMessages.poll()) != null) {
+            applyMessage(m);
+        }
     }
 }

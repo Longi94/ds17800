@@ -1,5 +1,4 @@
 package nl.vu.ds17800.server;
-import com.sun.security.ntlm.Client;
 import nl.vu.ds17800.core.networking.Endpoint;
 
 import java.net.Socket;
@@ -48,10 +47,14 @@ public class DasServer {
         }).start();
 
         while(true) {
-            // handle next incoming messages
-            sc.handleNextMessage();
             // flush any outgoing messages
             sc.flushOutgoingMessages();
+
+            // handle all incoming messages
+            sc.handleNextMessage();
+
+            System.out.println("Clients: " + sc.getConnectedClients().size());
+            System.out.println("Servers: " + sc.getConnectedServers().size());
         }
     }
 

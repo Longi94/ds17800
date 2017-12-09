@@ -1,7 +1,7 @@
 package nl.vu.ds17800.server;
 
 import nl.vu.ds17800.core.model.MessageRequest;
-import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Message;
 import nl.vu.ds17800.core.networking.IncomingMessage;
 
 import java.net.Socket;
@@ -10,7 +10,7 @@ public class ClientWorker extends AbstractWorker implements IClientConnection {
 
     // this is false until the client has a unit and the battlefield ready. before that we
     // don't want to send her any updates
-    private boolean isInitialized = false;
+    private boolean initialized = false;
 
     // handler for socket events
     private final ServerController serverController;
@@ -47,13 +47,13 @@ public class ClientWorker extends AbstractWorker implements IClientConnection {
 
     @Override
     public void sendMessage(Message m) {
-        if(!isInitialized && (MessageRequest)m.get("request") != MessageRequest.clientConnect) {
+        if(!initialized && (MessageRequest)m.get("request") != MessageRequest.clientConnect) {
             // we skip messages until the client is initialized. unless we're actually sending
             // out the initialization message right now.
             System.out.println("Client not initialized, skipping!");
             return;
         } else {
-            this.isInitialized = true;
+            this.initialized = true;
         }
         super.sendMessage(m);
     }

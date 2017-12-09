@@ -2,7 +2,7 @@ package nl.vu.ds17800.client;
 
 import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.units.Unit;
-import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Message;
 
 import java.util.List;
 import java.util.Random;

@@ -7,13 +7,13 @@ import nl.vu.ds17800.core.model.units.Dragon;
 import nl.vu.ds17800.core.model.units.Player;
 import nl.vu.ds17800.core.model.units.Unit;
 import nl.vu.ds17800.core.networking.*;
-import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Message;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
-import static nl.vu.ds17800.core.model.RequestStage.ask;
 
 /**
  * Handle server interaction
@@ -23,6 +23,14 @@ public class ServerController implements IncomingHandler, IBroadcaster {
     private final Executor executor = Executors.newCachedThreadPool();
     private final Map<UUID, FutureTask<Boolean>> broadcastFutureTasks;
     private final Map<UUID, Integer> acceptsRequired;
+
+    public Set<IClientConnection> getConnectedClients() {
+        return connectedClients;
+    }
+
+    public Set<IServerConnection> getConnectedServers() {
+        return connectedServers;
+    }
 
     /**
      * To broadcast something after a timeout, unless cancelled before
@@ -45,7 +53,6 @@ public class ServerController implements IncomingHandler, IBroadcaster {
             return true;
         }
     }
-
 
     private BattleField bf = new BattleField();
     private Random random;
@@ -82,7 +89,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
      * @return true if all servers accepted the message
      */
     public void broadcastServers(Message m) {
-        for (IServerConnection s: connectedServers) {
+        for (IServerConnection s : connectedServers) {
             outgoingMessages.add(new OutgoingMessage(s, m));
         }
     }
@@ -105,21 +112,32 @@ public class ServerController implements IncomingHandler, IBroadcaster {
     public void flushOutgoingMessages() {
         OutgoingMessage outm;
         while((outm = outgoingMessages.poll()) != null) {
-            outm.send();
+            try {
+                outm.send();
+            } catch (IOException e) {
+                System.out.println("Unable to send message ... ");
+            }
         }
     }
 
     public void handleNextMessage() {
         IncomingMessage inm = null;
         try {
-            // blocks until there's a message to take
-            inm = incomingMessages.take();
+            inm = incomingMessages.poll(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             System.out.println("handleNextMessage Interrupted!");
             System.exit(-1);
         }
+
+        if (inm == null) {
+            // This typically never happens, only when there are no clients and no servers
+            System.err.println("WARNING: No messages! Uncomfortable silence?");
+            return;
+        }
+
         Message m = inm.getMessage();
 
+        System.out.println("RECV> "+m);
         MessageRequest request = (MessageRequest)m.get("request");
         Message reply = null;
         switch(request) {
@@ -143,13 +161,8 @@ public class ServerController implements IncomingHandler, IBroadcaster {
 
                     // this is a new client that needs a Player Unit associated
                     int pos[] = bf.getRandomFreePosition(random);
-                    Message msgSpawnUnit = new Message();
-                    msgSpawnUnit.put("requestStage", ask);
-                    msgSpawnUnit.put("request", spawnUnit);
-                    msgSpawnUnit.put("unit", player);
-                    msgSpawnUnit.put("x", pos[0]);
-                    msgSpawnUnit.put("y", pos[1]);
-                    broadcastServers(msgSpawnUnit);
+
+                    request(Message.spawnUnit(player, pos[0], pos[1]));
                 }
 
                 reply = new Message();
@@ -200,20 +213,8 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                 if (rs == null) {
                     // one of our client requested an action, ask our server peers if they're accept it
                     if (bf.check(m)) {
-                        // we initialize a state machine of sorts to keep track of the messge if should be
-                        // committed or omitted
-                        Message askMsg = Message.ask(m);
+                        request(m);
 
-                        // future task to send a message at a later stage. standard case is to cancel it
-                        // all accept messages OR a single reject message is received. It will however send
-                        // if all servers didn't respond within a certain time period.
-                        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new BroadcastOnTimeout(Message.commit(m), this));
-                        executor.execute(futureTask);
-
-                        broadcastFutureTasks.put((UUID)askMsg.get("ref"), futureTask);
-                        acceptsRequired.put((UUID)askMsg.get("ref"), connectedServers.size());
-
-                        broadcastServers(askMsg);
                     } else {
                         System.out.println("hmmmmm client out of sync with our battlefield");
                         // the client sent a message that can't even be applied
@@ -263,6 +264,28 @@ public class ServerController implements IncomingHandler, IBroadcaster {
             default:
                 return;
         }
+    }
+
+    private void request(Message m) {
+        if (connectedServers.size() == 0) {
+            System.out.println("WARNING: No connected peer servers!");
+            broadcastClients(m);
+            return;
+        }
+        // we initialize a state machine of sorts to keep track of the message if should be
+        // committed or omitted, the messages will have a reference so that we can keep keep track of them
+        Message askMsg = Message.ask(m);
+
+        // Use a FutureTask to send a message after a timeout. Standard case is
+        // to cancel it before the timeout and send immediately when all servers
+        // have accepted to drop it if any server rejects the request
+        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new BroadcastOnTimeout(Message.commit(m), this));
+        executor.execute(futureTask);
+
+        broadcastFutureTasks.put((UUID)askMsg.get("ref"), futureTask);
+        acceptsRequired.put((UUID)askMsg.get("ref"), connectedServers.size());
+
+        broadcastServers(askMsg);
     }
 
     /**
@@ -320,5 +343,4 @@ public class ServerController implements IncomingHandler, IBroadcaster {
         // handle messages on a separate thread
         incomingMessages.add(inm);
     }
-
 }

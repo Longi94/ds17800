@@ -30,6 +30,16 @@ public class DasClient {
         while(true) {
             // Set up (re-)connection
             server = ClientController.getServerToConnect(SERVERS);
+            if (server == null) {
+                System.out.println("No server available or rather: You're not offline");
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                continue;
+            }
+
             clientController = new ClientController();
             serverConnection = new ServerConnection(server, clientController);
             try {
@@ -37,12 +47,15 @@ public class DasClient {
                 serverConnection.initializeClientUnit(unitType, unitId);
             } catch (Exception e) {
                 System.out.println("Connection error: " + e.getMessage() + ". Will reconnect... ");
+                e.printStackTrace();
                 // start over, make a new connection
                 continue;
             }
 
             // save the unit id in case we need to reconnect
-            unitId = clientController.getUnit().getUnitID();
+            unitId = clientController.getUnitID();
+
+            serverConnection.startListenerThread();
 
             while (true) {
                 try {
@@ -52,24 +65,23 @@ public class DasClient {
                 }
 
                 // apply any incoming message we might have in the socket buffer
-                try {
-                    serverConnection.consumeIncomingMessages();
-                } catch (Exception e) {
-                    System.out.println("Connection error: " + e.getMessage() + ". Will reconnect... ");
-                    // break out of the game loop, reconnect and hope everything will be ok again
-                    break;
-                }
+                clientController.applyIncomingMessages();
 
                 // run next client action
-                serverConnection.sendMessage(clientController.getNextMessage());
+                try {
+                    serverConnection.sendMessage(clientController.getNextMessage());
+                } catch (IOException e) {
+                    System.out.println("Unable to send message");
+                    break;
+                }
             }
+
+            serverConnection.close();
         }
     }
 
 
     public static void main(String[] args) {
-
-
         if (args.length < 1){
             System.out.println("Input: <dragon/player> [debug]");
             return;

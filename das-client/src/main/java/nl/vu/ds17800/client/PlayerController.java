@@ -2,11 +2,9 @@ package nl.vu.ds17800.client;
 
 import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.units.Unit;
-import nl.vu.ds17800.core.networking.Entities.Message;
+import nl.vu.ds17800.core.networking.Message;
 
 import java.util.Random;
-
-import static nl.vu.ds17800.core.model.MessageRequest.*;
 
 public class PlayerController implements IUnitController {
 

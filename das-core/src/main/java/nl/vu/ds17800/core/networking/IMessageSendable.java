@@ -1,7 +1,7 @@
 package nl.vu.ds17800.core.networking;
 
-import nl.vu.ds17800.core.networking.Entities.Message;
+import java.io.IOException;
 
 public interface IMessageSendable {
-    void sendMessage(Message m);
+    void sendMessage(Message m) throws IOException;
 }
