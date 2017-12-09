@@ -302,6 +302,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
     public void addClient(IClientConnection c) {
         connectedClients.add(c);
     }
+
     public void removeClient(IClientConnection c) {
         connectedClients.remove(c);
     }

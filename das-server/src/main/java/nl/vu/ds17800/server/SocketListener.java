@@ -1,19 +1,18 @@
 package nl.vu.ds17800.server;
 
-import javax.print.attribute.standard.MediaSize;
 import java.io.IOException;
 import java.net.ServerSocket;
 
 /**
  * Listen to incoming client connections
  */
-public class ClientListener {
+public class SocketListener {
 
-    private final ServerController serverController;
+    private final IConnectionHandler connectionHandler;
     private ServerSocket socket;
 
-    ClientListener(ServerController sc) {
-        this.serverController = sc;
+    SocketListener(IConnectionHandler connectionHandler) {
+        this.connectionHandler = connectionHandler;
     }
 
     void listenSocket(int port) {
@@ -25,15 +24,9 @@ public class ClientListener {
         }
 
         while(true) {
-            ClientWorker w;
-
             try {
-                // new client connection! Give it to our controller to handle its incoming messages
-                w = new ClientWorker(socket.accept(), serverController);
-
-                // start accepting messages
-                Thread t = new Thread(w);
-                t.start();
+                // new connection!
+                this.connectionHandler.handle(socket.accept());
             } catch (IOException e) {
                 System.out.println("Accept failed: " + port);
                 System.exit(-1);
