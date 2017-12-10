@@ -146,30 +146,39 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                 System.out.println("New client connected!");
 
                 Unit player = null;
+
                 if (m.get("id") != null) {
                     // this is a reconnecting client that already has a Unit
                     player = bf.findUnitById((String) m.get("id"));
                 }
 
-                if (player == null) {
+                // should we spawn a new player?
+                boolean shouldSpawn = player == null;
+
+                if (shouldSpawn) {
                     // BattleField assigns the unit its position, thus -1, -1
                     if (((String)m.get("type")).equals("dragon")) {
                         player = new Dragon(this.bf.getNewUnitID(),-1, -1, random);
                     } else {
                         player = new Player(this.bf.getNewUnitID(),-1, -1, random);
                     }
-
-                    // this is a new client that needs a Player Unit associated
-                    int pos[] = bf.getRandomFreePosition(random);
-
-                    request(Message.spawnUnit(player, pos[0], pos[1]));
                 }
 
                 reply = new Message();
-                reply.put("request", clientConnect);
                 reply.put("id", player.getUnitID());
+
+                // maybe bad semantics but we reuse the clientConnect type here
+                reply.put("request", clientConnect);
                 reply.put("battlefield", bf);
                 outgoingMessages.add(new OutgoingMessage(inm.getSender(), reply));
+
+                if (shouldSpawn) {
+                    int pos[] = bf.getRandomFreePosition(random);
+                    // It may happen that this request is rejected, we catch that reject message later
+                    // on and try a new position in that case!
+                    request(Message.spawnUnit(player, pos[0], pos[1]));
+                }
+
                 return;
             case clientDisconnect:
                 // client gracefully disconnected! he is no longer part of the game, so we remove it
@@ -247,6 +256,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                             ref = (UUID) m.get("ref");
                             acceptsRequired.put(ref, acceptsRequired.get(ref) - 1);
                             if (acceptsRequired.get(ref) == 0) {
+                                // ok everyone accepted the change!
                                 broadcastFutureTasks.remove(ref).cancel(true);
                                 broadcast(Message.commit(m));
                             }
@@ -254,8 +264,12 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                         case reject:
                             ref = (UUID) m.get("ref");
                             broadcastFutureTasks.remove(ref).cancel(true);
-                            // some server rejected our ask message, so we may have to tell our client but it should
-                            // eventually get the conflicting message and see for himself why it was rejected
+                            if ((MessageRequest)m.get("request") == spawnUnit) {
+                                int pos[] = bf.getRandomFreePosition(random);
+                                // Hm some server rejected a spawn request, well the player still needs
+                                // to spawn so try a new position
+                                request(Message.spawnUnit((Unit)m.get("unit"), pos[0], pos[1]));
+                            }
                             return;
                         default:
                             // nop
