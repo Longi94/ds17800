@@ -4,14 +4,18 @@ import nl.vu.ds17800.core.networking.IncomingMessage;
 
 import java.net.Socket;
 
-public class ServerWorker extends AbstractWorker implements IServerConnection {
+/**
+ * Handle outgoing messages to a remote server, and responses to those messages
+ */
+public class ServerOutWorker extends AbstractWorker implements IServerConnection {
 
     // handler for socket events
     private final ServerController serverController;
 
-    public ServerWorker(Socket socket, ServerController serverController) {
+    public ServerOutWorker(Socket socket, ServerController serverController) {
         super(socket);
         this.serverController = serverController;
+        this.name = "serverOUT";
     }
 
     @Override
@@ -20,13 +24,12 @@ public class ServerWorker extends AbstractWorker implements IServerConnection {
     }
 
     @Override
-    protected void register() {
+    protected void onConnect() {
         serverController.addServer(this);
-
     }
 
     @Override
-    protected void unregister() {
+    protected void onDisconnect() {
         serverController.removeServer(this);
     }
 }

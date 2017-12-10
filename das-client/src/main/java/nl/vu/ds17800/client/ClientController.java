@@ -62,6 +62,18 @@ public class ClientController implements IncomingHandler {
             case clientConnect:
                 battleField = (BattleField) message.get("battlefield");
                 unitId = (String)message.get("id");
+                unit = battleField.findUnitById(unitId);
+
+                // in case we reconnected, we can find our unit on the battlefield
+                if (unit != null) {
+                    // so this is a reconnect, recreate the controller
+                    if (unit instanceof Dragon) {
+                        unitController = new DragonController(battleField, unit);
+                    } else {
+                        unitController = new PlayerController(battleField, unit);
+                    }
+                }
+                // otherwise we expect a spawnUnit message with the unit
                 break;
             case spawnUnit:
                 Unit u = (Unit)message.get("unit");

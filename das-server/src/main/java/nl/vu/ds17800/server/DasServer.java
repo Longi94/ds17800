@@ -1,7 +1,14 @@
 package nl.vu.ds17800.server;
 import nl.vu.ds17800.core.networking.Endpoint;
+import nl.vu.ds17800.core.networking.KeepAlive;
+import nl.vu.ds17800.core.networking.Message;
 
+import java.io.IOException;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.Callable;
 
 /**
  * @author lngtr
@@ -10,13 +17,26 @@ import java.net.Socket;
 public class DasServer {
     public static boolean DEBUG = false;
 
+    public static Random RANDOM;
+
+    public final static List<Endpoint> SERVERS = Arrays.asList(
+            new Endpoint("localhost", 20100),
+            new Endpoint("localhost", 20101),
+            new Endpoint("localhost", 20102),
+            new Endpoint("localhost", 20103),
+            new Endpoint("localhost", 20104)
+    );
+
+    private final ServerController serverController;
+
     public DasServer(final Endpoint serverClientEndp, final Endpoint serverServerEndp) {
-        final ServerController sc = new ServerController();
+        RANDOM = new Random(serverClientEndp.getPort());
+        serverController = new ServerController();
 
         final SocketListener clientListener = new SocketListener(new IConnectionHandler() {
             @Override
             public void handle(Socket s) {
-                new Thread(new ClientWorker(s, sc)).start();
+                new Thread(new ClientWorker(s, serverController)).start();
             }
         });
 
@@ -29,15 +49,30 @@ public class DasServer {
             }
         }).start();
 
+        // For the sake of symmetry the server connections are two-ways, there
+        // will be two sockets open per server peer, initiated from either sides.
+        // On these sockets, we receive messages on behalf of foreign clients.
+        for (Endpoint endp : SERVERS) {
+            if (endp.equals(serverServerEndp)) {
+                // don't connect to ourselves
+                continue;
+            }
+
+            connectServer(endp);
+        }
 
         final SocketListener serverListener = new SocketListener(new IConnectionHandler() {
             @Override
             public void handle(Socket s) {
-                new Thread(new ServerWorker(s, sc)).start();
+                ServerOutWorker sow = new ServerOutWorker(s, serverController);
+                KeepAlive keepAlive = new KeepAlive(sow);
+                keepAlive.start();
+                new Thread(sow).start();
             }
         });
 
-        // listener thread for incoming server-server connections
+        // Listener thread for incoming server-server connections. On this socket
+        // we send our client actions.
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -48,14 +83,77 @@ public class DasServer {
 
         while(true) {
             // flush any outgoing messages
-            sc.flushOutgoingMessages();
+            serverController.flushOutgoingMessages();
 
             // handle all incoming messages
-            sc.handleNextMessage();
+            serverController.handleNextMessage();
 
-            System.out.println("Clients: " + sc.getConnectedClients().size());
-            System.out.println("Servers: " + sc.getConnectedServers().size());
+            System.out.println("C: " + serverController.getConnectedClients().size() + ", S: " + serverController.getConnectedServers().size());
         }
+    }
+
+    private void connectServer(final Endpoint endp) {
+
+        new Thread(new Runnable() {
+            class Interval implements Runnable {
+
+                private final int interval;
+                private final Callable<Boolean> callable;
+
+                public Interval(int i, Callable<Boolean> callable) {
+                    interval = i;
+                    this.callable = callable;
+                }
+
+                @Override
+                public void run() {
+                    boolean reschedule = true;
+                    while (reschedule) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            reschedule = callable.call();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            reschedule = false;
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void run() {
+                while(true) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e1) {}
+                    Socket s = null;
+                    try {
+                        s = new Socket(endp.getHost(), endp.getPort());
+                    } catch (IOException e) {
+                        System.out.println("Failed to open socket with server node!");
+
+                        //retry
+                        continue;
+                    }
+
+                    final ServerInWorker siw = new ServerInWorker(s, serverController);
+
+                    // a poor mans keep alive thread, every second we send a nop to keep the connection alive
+                    // if it fails, the we stop
+                    KeepAlive keepAlive = new KeepAlive(siw);
+
+                    keepAlive.start();
+                    siw.run();
+                    keepAlive.stop();
+
+                    System.err.println("Lost connection! Will reconnect");
+                }
+            }
+        }).start();
     }
 
     public static void main(String[] args) {

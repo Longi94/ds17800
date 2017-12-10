@@ -17,6 +17,8 @@ import java.net.SocketTimeoutException;
  */
 public abstract class AbstractWorker implements Runnable, IMessageSendable {
 
+    protected String name = "abstract";
+
     // socket
     private final Socket socket;
 
@@ -40,12 +42,12 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
 
     @Override
     public void run() {
-        register();
+        onConnect();
 
         Message m = null;
         while(true) {
             try {
-                // If we don't hear from a client in 5 seconds, the socket will be closed
+                // If we don't hear from a remote in 5 seconds, the socket will be closed
                 socket.setSoTimeout(5000);
             } catch (SocketException e) {
                 break;
@@ -55,7 +57,7 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
                 // We only accept Message object to be sent to us
                 m = (Message) input.readObject();
             } catch(SocketTimeoutException e) {
-                // If we don't hear from a client in 5 seconds, the socket will be closed
+                // If we don't hear from a remote in 5 seconds, the socket will be closed
                 System.err.println("Timeout!");
                 break;
             } catch (IOException e) {
@@ -86,7 +88,7 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
             handleMessage(new IncomingMessage(m, this));
         }
 
-        unregister();
+        onDisconnect();
         if (!socket.isClosed()) {
             try {
                 socket.close();
@@ -94,21 +96,24 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
                 e.printStackTrace();
             }
         }
+        try {
+            output.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            input.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     abstract protected void handleMessage(IncomingMessage inm);
-    abstract protected void register();
-    abstract protected void unregister();
+    abstract protected void onConnect();
+    abstract protected void onDisconnect();
 
     @Override
-    public void sendMessage(Message m) {
-        System.out.println("SEND> "+m);
-        try {
-            output.writeObject(m);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println("Unhandled: Send message failed!");
-            System.exit(-1);
-        }
+    public void sendMessage(Message m) throws IOException {
+        output.writeObject(m);
     }
 }

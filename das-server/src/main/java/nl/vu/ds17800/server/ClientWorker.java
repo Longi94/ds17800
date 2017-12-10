@@ -4,6 +4,7 @@ import nl.vu.ds17800.core.model.MessageRequest;
 import nl.vu.ds17800.core.networking.Message;
 import nl.vu.ds17800.core.networking.IncomingMessage;
 
+import java.io.IOException;
 import java.net.Socket;
 
 public class ClientWorker extends AbstractWorker implements IClientConnection {
@@ -32,7 +33,7 @@ public class ClientWorker extends AbstractWorker implements IClientConnection {
      * Register this client so we can send messages to it
      */
     @Override
-    protected void register() {
+    protected void onConnect() {
         serverController.addClient(this);
     }
 
@@ -40,13 +41,13 @@ public class ClientWorker extends AbstractWorker implements IClientConnection {
      * Remove this client from
      */
     @Override
-    protected void unregister() {
+    protected void onDisconnect() {
         serverController.removeClient(this);
     }
 
 
     @Override
-    public void sendMessage(Message m) {
+    public void sendMessage(Message m) throws IOException {
         if(!initialized && (MessageRequest)m.get("request") != MessageRequest.clientConnect) {
             // we skip messages until the client is initialized. unless we're actually sending
             // out the initialization message right now.

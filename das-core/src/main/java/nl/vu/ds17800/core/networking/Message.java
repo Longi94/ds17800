@@ -1,5 +1,6 @@
 package nl.vu.ds17800.core.networking;
 
+import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.MessageRequest;
 import nl.vu.ds17800.core.model.RequestStage;
 import nl.vu.ds17800.core.model.units.Unit;
@@ -148,6 +149,13 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
         m.put("unit", u);
         m.put("x", x);
         m.put("y", y);
+        return m;
+    }
+
+    public static Message serverConnect(BattleField bf) {
+        Message m = new Message();
+        m.put("request", MessageRequest.serverConnect);
+        m.put("battlefield", bf);
         return m;
     }
 }

@@ -78,7 +78,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
         this.reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
         this.incomingMessages = new PriorityBlockingQueue<IncomingMessage>();
         this.outgoingMessages = new PriorityBlockingQueue<OutgoingMessage>();
-        this.random = new Random(123);
+        this.random = DasServer.RANDOM;
         this.broadcastFutureTasks = new HashMap<UUID, FutureTask<Boolean>>();
         this.acceptsRequired = new HashMap<UUID, Integer>();
     }
@@ -115,7 +115,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
             try {
                 outm.send();
             } catch (IOException e) {
-                System.out.println("Unable to send message ... ");
+                System.out.println("Unable to send message ... message is dropped!");
             }
         }
     }
@@ -197,19 +197,22 @@ public class ServerController implements IncomingHandler, IBroadcaster {
 
                 return;
             case serverConnect:
-                // server node connected,
-                // add to server broadcast list
-                // transfer state
-                reply = new Message();
-                reply.put("request", serverConnect);
-                reply.put("battlefield", bf);
-                outgoingMessages.add(new OutgoingMessage(inm.getSender(), reply));
+                BattleField battleField = (BattleField)m.get("battlefield");
+
+                // check the battlefield of the remote server
+                if (bf.getUpdateCount() < battleField.getUpdateCount()) {
+                    // this battlefield is more recent so lets use this instead!
+                    // if there has been a desync from other servers for some time it replacing our own
+                    // battlefield like this can result on lost units that spawned on this server
+                    System.out.println("Updated own battleField");
+                    bf = battleField;
+                }
+
                 return;
             case serverDisconnect:
                 // server node disconnected
-                // what remove from broadcast list?
-
-                // connectedServers.remove();
+                // not much to do about it.
+                // this is unused
                 return;
             case spawnUnit:
             case moveUnit:
@@ -228,7 +231,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                         System.out.println("hmmmmm client out of sync with our battlefield");
                         // the client sent a message that can't even be applied
                         // to our own battlefield! He must be totally out of sync?
-                        outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.reject(m)));
+                        // outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.reject(m)));
                     }
                 } else {
                     // this is a server sent message, it can be that a server
@@ -263,7 +266,10 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                             return;
                         case reject:
                             ref = (UUID) m.get("ref");
-                            broadcastFutureTasks.remove(ref).cancel(true);
+                            FutureTask t = broadcastFutureTasks.remove(ref);
+                            if (t != null) {
+                                t.cancel(true);
+                            }
                             if ((MessageRequest)m.get("request") == spawnUnit) {
                                 int pos[] = bf.getRandomFreePosition(random);
                                 // Hm some server rejected a spawn request, well the player still needs
@@ -283,6 +289,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
     private void request(Message m) {
         if (connectedServers.size() == 0) {
             System.out.println("WARNING: No connected peer servers!");
+            bf.apply(m);
             broadcastClients(m);
             return;
         }
@@ -326,7 +333,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
         int x = (int) m.get("x");
         int y = (int) m.get("y");
 
-        if (reservedSpot[x][y] != 0 && t < reservedSpot[x][y]) {
+        if (reservedSpot[x][y] == 0 || t < reservedSpot[x][y]) {
             // this event happened earlier than the currently reserved one, so this will be accepted
             reservedSpot[x][y] = t;
             outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.accept(m)));
@@ -345,6 +352,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
     }
 
     public void addServer(IServerConnection c) {
+        outgoingMessages.add(new OutgoingMessage(c, Message.serverConnect(bf)));
         connectedServers.add(c);
     }
 

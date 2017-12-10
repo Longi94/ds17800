@@ -52,6 +52,9 @@ public class DasClient {
                 continue;
             }
 
+            // make sure to handle the response!
+            clientController.applyIncomingMessages();
+
             // save the unit id in case we need to reconnect
             unitId = clientController.getUnitID();
 
@@ -59,7 +62,7 @@ public class DasClient {
 
             while (true) {
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(2500);
                 } catch (InterruptedException e) {
                     System.out.println("Sleep interrupted!");
                 }
