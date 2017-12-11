@@ -47,7 +47,7 @@ public class ClientWorker extends AbstractWorker implements IClientConnection {
 
 
     @Override
-    public void sendMessage(Message m) throws IOException {
+    public synchronized void sendMessage(Message m) throws IOException {
         if(!initialized && (MessageRequest)m.get("request") != MessageRequest.clientConnect) {
             // we skip messages until the client is initialized. unless we're actually sending
             // out the initialization message right now.

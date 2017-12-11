@@ -32,6 +32,12 @@ public class ServerController implements IncomingHandler, IBroadcaster {
         return connectedServers;
     }
 
+    public void consumeIncomingMessages() {
+        while (pendingIncomingMessage()) {
+            handleNextMessage();
+        }
+    }
+
     /**
      * To broadcast something after a timeout, unless cancelled before
      */
@@ -39,16 +45,19 @@ public class ServerController implements IncomingHandler, IBroadcaster {
         private final Message message;
         public final static long TIMEOUT = 2000;
         private final IBroadcaster broadcaster;
+        private final BattleField bf;
 
-        public BroadcastOnTimeout(Message m, IBroadcaster broadcaster) {
+        public BroadcastOnTimeout(Message m, IBroadcaster broadcaster, BattleField bf) {
             this.message = m;
             this.broadcaster = broadcaster;
+            this.bf = bf;
         }
 
         @Override
         public Boolean call() throws Exception {
             Thread.sleep(BroadcastOnTimeout.TIMEOUT);
             System.err.println("Warning: Did not receive all Server responses on time. Assume accepted");
+            bf.apply(message);
             broadcaster.broadcast(message);
             return true;
         }
@@ -73,8 +82,8 @@ public class ServerController implements IncomingHandler, IBroadcaster {
     private final long[][] reservedSpot;
 
     public ServerController() {
-        this.connectedServers = Collections.synchronizedSet(new HashSet<IServerConnection>());
-        this.connectedClients = Collections.synchronizedSet(new HashSet<IClientConnection>());
+        this.connectedServers = Collections.newSetFromMap(new ConcurrentHashMap<IServerConnection, Boolean>());
+        this.connectedClients = Collections.newSetFromMap(new ConcurrentHashMap<IClientConnection, Boolean>());
         this.reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
         this.incomingMessages = new PriorityBlockingQueue<IncomingMessage>();
         this.outgoingMessages = new PriorityBlockingQueue<OutgoingMessage>();
@@ -105,6 +114,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
     }
 
     public void broadcast(Message m) {
+        System.out.println("SEND>"+m);
         broadcastServers(m);
         broadcastClients(m);
     }
@@ -120,24 +130,19 @@ public class ServerController implements IncomingHandler, IBroadcaster {
         }
     }
 
+    public boolean pendingIncomingMessage() {
+        return incomingMessages.peek() != null;
+    }
+
     public void handleNextMessage() {
-        IncomingMessage inm = null;
-        try {
-            inm = incomingMessages.poll(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            System.out.println("handleNextMessage Interrupted!");
-            System.exit(-1);
-        }
+        IncomingMessage inm = incomingMessages.poll();
 
         if (inm == null) {
-            // This typically never happens, only when there are no clients and no servers
-            System.err.println("WARNING: No messages! Uncomfortable silence?");
             return;
         }
 
         Message m = inm.getMessage();
 
-        System.out.println("RECV> "+m);
         MessageRequest request = (MessageRequest)m.get("request");
         Message reply = null;
         switch(request) {
@@ -189,12 +194,9 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                 msgRemoveUnit.put("y", u.getY());
 
                 // can this be rejected?
+                bf.apply(msgRemoveUnit);
                 broadcastServers(msgRemoveUnit);
                 broadcastClients(msgRemoveUnit);
-                reply = new Message();
-                reply.put("request", clientDisconnect);
-                outgoingMessages.add(new OutgoingMessage(inm.getSender(), reply));
-
                 return;
             case serverConnect:
                 BattleField battleField = (BattleField)m.get("battlefield");
@@ -206,6 +208,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                     // battlefield like this can result on lost units that spawned on this server
                     System.out.println("Updated own battleField");
                     bf = battleField;
+                    System.out.println(bf);
                 }
 
                 return;
@@ -226,9 +229,8 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                     // one of our client requested an action, ask our server peers if they're accept it
                     if (bf.check(m)) {
                         request(m);
-
                     } else {
-                        System.out.println("hmmmmm client out of sync with our battlefield");
+                        System.out.println("Client desynced! Requested to apply: " + m);
                         // the client sent a message that can't even be applied
                         // to our own battlefield! He must be totally out of sync?
                         // outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.reject(m)));
@@ -261,6 +263,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                             if (acceptsRequired.get(ref) == 0) {
                                 // ok everyone accepted the change!
                                 broadcastFutureTasks.remove(ref).cancel(true);
+                                bf.apply(m);
                                 broadcast(Message.commit(m));
                             }
                             return;
@@ -300,7 +303,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
         // Use a FutureTask to send a message after a timeout. Standard case is
         // to cancel it before the timeout and send immediately when all servers
         // have accepted to drop it if any server rejects the request
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new BroadcastOnTimeout(Message.commit(m), this));
+        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new BroadcastOnTimeout(Message.commit(m), this, bf));
         executor.execute(futureTask);
 
         broadcastFutureTasks.put((UUID)askMsg.get("ref"), futureTask);

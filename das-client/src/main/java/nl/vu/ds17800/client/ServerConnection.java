@@ -53,9 +53,7 @@ public class ServerConnection implements IMessageSendable {
     }
 
     @Override
-    public void sendMessage(Message m) throws IOException {
-        System.out.println("SEND> " +m);
-
+    public synchronized void sendMessage(Message m) throws IOException {
         output.writeObject(m);
     }
 
@@ -85,7 +83,6 @@ public class ServerConnection implements IMessageSendable {
                     try {
                         Message m = (Message)input.readObject();
                         // messages in the buffer
-                        System.out.println("RECV> " + m);
                         incomingHandler.handleMessage(new IncomingMessage(m, null));
                     } catch (Exception e) {
                         System.err.println("unhandled: Problem receiving! wtf?!");

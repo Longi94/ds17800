@@ -48,7 +48,7 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
         while(true) {
             try {
                 // If we don't hear from a remote in 5 seconds, the socket will be closed
-                socket.setSoTimeout(5000);
+                socket.setSoTimeout(10000);
             } catch (SocketException e) {
                 break;
            }
@@ -61,7 +61,7 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
                 System.err.println("Timeout!");
                 break;
             } catch (IOException e) {
-                // If a client closes the socket we end here
+                // If a remote closes the socket we end here
                 System.err.println("Remote disconnected: " + e.getMessage());
                 break;
             } catch (ClassNotFoundException e) {
@@ -89,13 +89,6 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
         }
 
         onDisconnect();
-        if (!socket.isClosed()) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
         try {
             output.close();
         } catch (IOException e) {
@@ -106,6 +99,13 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        if (!socket.isClosed()) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     abstract protected void handleMessage(IncomingMessage inm);
@@ -113,7 +113,7 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
     abstract protected void onDisconnect();
 
     @Override
-    public void sendMessage(Message m) throws IOException {
+    public synchronized void sendMessage(Message m) throws IOException {
         output.writeObject(m);
     }
 }

@@ -25,6 +25,7 @@ public class ClientController implements IncomingHandler {
     private BattleField battleField;
     private IUnitController unitController;
     private final PriorityBlockingQueue<Message> incomingMessages;
+    private boolean requestedDisconnect = false;
 
     public ClientController() {
         incomingMessages = new PriorityBlockingQueue<>();
@@ -85,23 +86,9 @@ public class ClientController implements IncomingHandler {
                         unitController = new PlayerController(battleField, unit);
                     }
                 }
-            case putUnit:
-            case healDamage:
-            case dealDamage:
-            case moveUnit:
-            case removeUnit:
+            default:
                 //if message request correspond to battleField actions - pass message to battleField
                 battleField.apply(message);
-
-                // spectator
-                if (unit != null && unit.getHitPoints() <= 0) {
-                    System.out.println("ME | " + unit);
-                    System.out.println(battleField.toString());
-                }
-                break;
-
-            default:
-                System.out.println("Unhandled message request from server");
         }
     }
 
@@ -132,7 +119,7 @@ public class ClientController implements IncomingHandler {
             Socket socket = null;
             ObjectOutputStream output = null;
             ObjectInputStream input = null;
-            System.out.print("trying " + srv + "... ");
+            System.err.print("trying " + srv + "... ");
             try {
                 socket = new Socket(srv.getKey(), srv.getValue());
                 output = new ObjectOutputStream(socket.getOutputStream());
@@ -158,7 +145,7 @@ public class ClientController implements IncomingHandler {
             long endPing = System.currentTimeMillis();
 
             pingTime = endPing - startPing;
-            System.out.println(pingTime + "ms");
+            System.err.println(pingTime + "ms");
             if (pingTime < bestPing) {
                 bestPing = pingTime;
                 result = srv;
@@ -177,5 +164,9 @@ public class ClientController implements IncomingHandler {
         while ((m = incomingMessages.poll()) != null) {
             applyMessage(m);
         }
+    }
+
+    public void printBattleField() {
+        System.out.println(battleField);
     }
 }

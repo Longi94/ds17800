@@ -179,16 +179,12 @@ public class BattleField implements Serializable {
      * @param y position.
      */
     public void removeUnit(int x, int y) {
-
-        synchronized (map) {
-
-            Unit unitToRemove = getUnit(x, y);
-            if (unitToRemove == null) {
-                return; // There was no unit here to remove
-            }
-            map[x][y] = null;
-            unitToRemove.setHitPoints(0);
+        Unit unitToRemove = getUnit(x, y);
+        if (unitToRemove == null) {
+            return; // There was no unit here to remove
         }
+        map[x][y] = null;
+        unitToRemove.setHitPoints(0);
     }
 
     /**

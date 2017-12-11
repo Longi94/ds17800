@@ -78,6 +78,7 @@ public class DasServer {
             public void run() {
                 System.out.println("Accepting server connections on " + serverServerEndp.getPort());
                 serverListener.listenSocket(serverServerEndp.getPort());
+                System.err.println("serverListener died!! ");
             }
         }).start();
 
@@ -86,44 +87,18 @@ public class DasServer {
             serverController.flushOutgoingMessages();
 
             // handle all incoming messages
-            serverController.handleNextMessage();
+            serverController.consumeIncomingMessages();
 
-            System.out.println("C: " + serverController.getConnectedClients().size() + ", S: " + serverController.getConnectedServers().size());
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {}
+
         }
     }
 
     private void connectServer(final Endpoint endp) {
 
         new Thread(new Runnable() {
-            class Interval implements Runnable {
-
-                private final int interval;
-                private final Callable<Boolean> callable;
-
-                public Interval(int i, Callable<Boolean> callable) {
-                    interval = i;
-                    this.callable = callable;
-                }
-
-                @Override
-                public void run() {
-                    boolean reschedule = true;
-                    while (reschedule) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        try {
-                            reschedule = callable.call();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            reschedule = false;
-                        }
-                    }
-                }
-            }
-
             @Override
             public void run() {
                 while(true) {
@@ -134,7 +109,6 @@ public class DasServer {
                     try {
                         s = new Socket(endp.getHost(), endp.getPort());
                     } catch (IOException e) {
-                        System.out.println("Failed to open socket with server node!");
 
                         //retry
                         continue;
@@ -142,8 +116,6 @@ public class DasServer {
 
                     final ServerInWorker siw = new ServerInWorker(s, serverController);
 
-                    // a poor mans keep alive thread, every second we send a nop to keep the connection alive
-                    // if it fails, the we stop
                     KeepAlive keepAlive = new KeepAlive(siw);
 
                     keepAlive.start();

@@ -20,6 +20,7 @@ public class DasClient {
             new Endpoint("localhost",10104)
     );
 
+    public static boolean DEBUG = false;
     private String unitId = null;
 
     public DasClient(String unitType) {
@@ -62,13 +63,17 @@ public class DasClient {
 
             while (true) {
                 try {
-                    Thread.sleep(2500);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     System.out.println("Sleep interrupted!");
                 }
 
                 // apply any incoming message we might have in the socket buffer
                 clientController.applyIncomingMessages();
+
+                if (DasClient.DEBUG) {
+                    clientController.printBattleField();
+                }
 
                 // run next client action
                 try {
@@ -91,6 +96,7 @@ public class DasClient {
         }
 
         String unitType = args[0];
+        DasClient.DEBUG = args.length > 1;
 
         if(!(unitType.equals("dragon") || unitType.equals("player"))) {
             System.out.println("Wrong unit type!");
