@@ -4,4 +4,5 @@ import nl.vu.ds17800.core.networking.Message;
 
 public interface IUnitController {
     public Message makeAction();
+    public boolean isGameover();
 }

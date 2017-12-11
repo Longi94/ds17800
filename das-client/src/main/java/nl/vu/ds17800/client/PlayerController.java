@@ -10,6 +10,7 @@ public class PlayerController implements IUnitController {
 
     private final BattleField battleField;
     private final Unit unit;
+    private boolean gameover = false;
 
     private enum Direction {up, down, left, right}
 
@@ -97,6 +98,11 @@ public class PlayerController implements IUnitController {
             }
         }
         return Message.nop();
+    }
+
+    @Override
+    public boolean isGameover() {
+        return gameover;
     }
 
     private Direction getDirection(Unit myUnit) {
