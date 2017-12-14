@@ -76,6 +76,7 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
                     output.writeObject(Message.pong());
                 } catch (IOException e) {
                     System.err.println("Pong could not be delivered..");
+                } finally {
                     break;
                 }
             }
@@ -89,16 +90,6 @@ public abstract class AbstractWorker implements Runnable, IMessageSendable {
         }
 
         onDisconnect();
-        try {
-            output.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            input.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         if (!socket.isClosed()) {
             try {
                 socket.close();

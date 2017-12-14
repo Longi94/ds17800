@@ -119,7 +119,6 @@ public class ClientController implements IncomingHandler {
             Socket socket = null;
             ObjectOutputStream output = null;
             ObjectInputStream input = null;
-            System.err.print("trying " + srv + "... ");
             try {
                 socket = new Socket(srv.getKey(), srv.getValue());
                 output = new ObjectOutputStream(socket.getOutputStream());
@@ -127,7 +126,6 @@ public class ClientController implements IncomingHandler {
                 output.writeObject(msgPing);
                 msgPong = (Message)input.readObject();
             } catch (IOException e) {
-                System.err.println("unavailable!");
                 continue;
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -145,7 +143,6 @@ public class ClientController implements IncomingHandler {
             long endPing = System.currentTimeMillis();
 
             pingTime = endPing - startPing;
-            System.err.println(pingTime + "ms");
             if (pingTime < bestPing) {
                 bestPing = pingTime;
                 result = srv;

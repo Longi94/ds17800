@@ -1,5 +1,6 @@
 package nl.vu.ds17800.server;
 
+import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.MessageRequest;
 import nl.vu.ds17800.core.networking.Message;
 import nl.vu.ds17800.core.networking.IncomingMessage;
@@ -15,6 +16,7 @@ public class ClientWorker extends AbstractWorker implements IClientConnection {
 
     // handler for socket events
     private final ServerController serverController;
+    private String id;
 
     public ClientWorker(Socket socket, ServerController serverController) {
         super(socket);
@@ -48,14 +50,24 @@ public class ClientWorker extends AbstractWorker implements IClientConnection {
 
     @Override
     public synchronized void sendMessage(Message m) throws IOException {
-        if(!initialized && (MessageRequest)m.get("request") != MessageRequest.clientConnect) {
+        if (!initialized && (MessageRequest)m.get("request") != MessageRequest.clientConnect) {
             // we skip messages until the client is initialized. unless we're actually sending
             // out the initialization message right now.
-            System.out.println("Client not initialized, skipping!");
+            System.out.println("Client " + getClientId() + " not initialized, skipping!");
             return;
         } else {
-            this.initialized = true;
+            initialized = true;
         }
         super.sendMessage(m);
+    }
+
+    @Override
+    public void setClientId(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public String getClientId() {
+        return id;
     }
 }

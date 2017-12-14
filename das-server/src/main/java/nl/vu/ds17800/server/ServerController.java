@@ -21,16 +21,8 @@ import static nl.vu.ds17800.core.model.MessageRequest.*;
 public class ServerController implements IncomingHandler, IBroadcaster {
 
     private final Executor executor = Executors.newCachedThreadPool();
-    private final Map<UUID, FutureTask<Boolean>> broadcastFutureTasks;
-    private final Map<UUID, Integer> acceptsRequired;
-
-    public Set<IClientConnection> getConnectedClients() {
-        return connectedClients;
-    }
-
-    public Set<IServerConnection> getConnectedServers() {
-        return connectedServers;
-    }
+    private final Map<UUID, FutureTask<Void>> broadcastFutureTasks = new HashMap<UUID, FutureTask<Void>>();
+    private final Map<UUID, Integer> acceptsRequired = new HashMap<UUID, Integer>();
 
     public void consumeIncomingMessages() {
         while (pendingIncomingMessage()) {
@@ -41,56 +33,45 @@ public class ServerController implements IncomingHandler, IBroadcaster {
     /**
      * To broadcast something after a timeout, unless cancelled before
      */
-    private class BroadcastOnTimeout implements Callable<Boolean> {
-        private final Message message;
+    private class Timer implements Runnable {
         public final static long TIMEOUT = 2000;
-        private final IBroadcaster broadcaster;
-        private final BattleField bf;
+        private final Runnable onTimeout;
+        private final long timeout;
 
-        public BroadcastOnTimeout(Message m, IBroadcaster broadcaster, BattleField bf) {
-            this.message = m;
-            this.broadcaster = broadcaster;
-            this.bf = bf;
+        public Timer(long timeout, Runnable onTimeout) {
+            this.onTimeout = onTimeout;
+            this.timeout = timeout;
         }
 
         @Override
-        public Boolean call() throws Exception {
-            Thread.sleep(BroadcastOnTimeout.TIMEOUT);
+        public void run() {
+            try { Thread.sleep(Timer.TIMEOUT); } catch (InterruptedException e) {
+                return;
+            }
             System.err.println("Warning: Did not receive all Server responses on time. Assume accepted");
-            bf.apply(message);
-            broadcaster.broadcast(message);
-            return true;
+            onTimeout.run();
         }
     }
 
     private BattleField bf = new BattleField();
-    private Random random;
+    private Random random = DasServer.RANDOM;
 
     // connected server peers
-    private final Set<IServerConnection> connectedServers;
+    private final Set<IServerConnection> connectedServers = Collections.newSetFromMap(new ConcurrentHashMap<IServerConnection, Boolean>());;
 
     // clients connected to this server
-    private final Set<IClientConnection> connectedClients;
+    private final Set<IClientConnection> connectedClients = Collections.newSetFromMap(new ConcurrentHashMap<IClientConnection, Boolean>());
 
     // messages to handle, sorted by timestamp
-    private final PriorityBlockingQueue<IncomingMessage> incomingMessages;
+    private final PriorityBlockingQueue<IncomingMessage> incomingMessages = new PriorityBlockingQueue<IncomingMessage>();
 
     // messages to handle, sorted by timestamp
-    private final PriorityBlockingQueue<OutgoingMessage> outgoingMessages;
+    private final PriorityBlockingQueue<OutgoingMessage> outgoingMessages = new PriorityBlockingQueue<OutgoingMessage>();
 
     // here we reserve spots while waiting for a commit
-    private final long[][] reservedSpot;
+    private final long[][] reservedSpot  = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
 
-    public ServerController() {
-        this.connectedServers = Collections.newSetFromMap(new ConcurrentHashMap<IServerConnection, Boolean>());
-        this.connectedClients = Collections.newSetFromMap(new ConcurrentHashMap<IClientConnection, Boolean>());
-        this.reservedSpot = new long[BattleField.MAP_WIDTH][BattleField.MAP_HEIGHT];
-        this.incomingMessages = new PriorityBlockingQueue<IncomingMessage>();
-        this.outgoingMessages = new PriorityBlockingQueue<OutgoingMessage>();
-        this.random = DasServer.RANDOM;
-        this.broadcastFutureTasks = new HashMap<UUID, FutureTask<Boolean>>();
-        this.acceptsRequired = new HashMap<UUID, Integer>();
-    }
+    public ServerController() {}
 
     /**
      * Broadcast m to all server nodes.
@@ -125,7 +106,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
             try {
                 outm.send();
             } catch (IOException e) {
-                System.out.println("Unable to send message ... message is dropped!");
+                System.err.println(">>>>>>>>>Unable to send message ... message is dropped!");
             }
         }
     }
@@ -135,7 +116,8 @@ public class ServerController implements IncomingHandler, IBroadcaster {
     }
 
     public void handleNextMessage() {
-        IncomingMessage inm = incomingMessages.poll();
+        IncomingMessage inm = null;
+        inm = incomingMessages.poll();
 
         if (inm == null) {
             return;
@@ -147,9 +129,6 @@ public class ServerController implements IncomingHandler, IBroadcaster {
         Message reply = null;
         switch(request) {
             case clientConnect:
-                // This server got a new client
-                System.out.println("New client connected!");
-
                 Unit player = null;
 
                 if (m.get("id") != null) {
@@ -171,6 +150,10 @@ public class ServerController implements IncomingHandler, IBroadcaster {
 
                 reply = new Message();
                 reply.put("id", player.getUnitID());
+
+                // This server got a new client
+                System.out.println("New client connected! " + player.getUnitID());
+                ((IClientConnection)inm.getSender()).setClientId(player.getUnitID());
 
                 // maybe bad semantics but we reuse the clientConnect type here
                 reply.put("request", clientConnect);
@@ -195,8 +178,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
 
                 // can this be rejected?
                 bf.apply(msgRemoveUnit);
-                broadcastServers(msgRemoveUnit);
-                broadcastClients(msgRemoveUnit);
+                broadcast(msgRemoveUnit);
                 return;
             case serverConnect:
                 BattleField battleField = (BattleField)m.get("battlefield");
@@ -228,6 +210,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                 if (rs == null) {
                     // one of our client requested an action, ask our server peers if they're accept it
                     if (bf.check(m)) {
+                        System.out.println("My clients wants to do " + m);
                         request(m);
                     } else {
                         System.out.println("Client desynced! Requested to apply: " + m);
@@ -274,6 +257,8 @@ public class ServerController implements IncomingHandler, IBroadcaster {
                                 t.cancel(true);
                             }
                             if ((MessageRequest)m.get("request") == spawnUnit) {
+                                //System.out.println("retry to spawn");
+
                                 int pos[] = bf.getRandomFreePosition(random);
                                 // Hm some server rejected a spawn request, well the player still needs
                                 // to spawn so try a new position
@@ -289,21 +274,28 @@ public class ServerController implements IncomingHandler, IBroadcaster {
         }
     }
 
-    private void request(Message m) {
-        if (connectedServers.size() == 0) {
-            System.out.println("WARNING: No connected peer servers!");
-            bf.apply(m);
-            broadcastClients(m);
-            return;
-        }
+    private void request(final Message m) {
         // we initialize a state machine of sorts to keep track of the message if should be
         // committed or omitted, the messages will have a reference so that we can keep keep track of them
         Message askMsg = Message.ask(m);
 
+        if((MessageRequest) m.get("request") == moveUnit) {
+            if (reservedSpot[(Integer) m.get("x")][(Integer) m.get("y")] != 0 &&
+                    reservedSpot[(Integer) m.get("x")][(Integer) m.get("y")] < (long)m.get("timestamp")) {
+                System.out.println("This spot is reserved!");
+                return;
+            }
+        }
+
         // Use a FutureTask to send a message after a timeout. Standard case is
         // to cancel it before the timeout and send immediately when all servers
         // have accepted to drop it if any server rejects the request
-        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new BroadcastOnTimeout(Message.commit(m), this, bf));
+        FutureTask futureTask = new FutureTask<Void>(new Timer(Timer.TIMEOUT, new Runnable() {
+            @Override
+            public void run() {
+                broadcast(Message.commit(m));
+            }
+        }), null);
         executor.execute(futureTask);
 
         broadcastFutureTasks.put((UUID)askMsg.get("ref"), futureTask);
@@ -342,6 +334,7 @@ public class ServerController implements IncomingHandler, IBroadcaster {
             outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.accept(m)));
         } else {
             // this event happened later in time so the message must be rejected
+            System.out.println("This spot is reserved!");
             outgoingMessages.add(new OutgoingMessage(inm.getSender(), Message.reject(m)));
         }
     }

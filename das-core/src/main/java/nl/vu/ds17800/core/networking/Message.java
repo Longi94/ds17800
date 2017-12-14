@@ -19,6 +19,12 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
     public Message() {
         super();
         this.put("timestamp", System.currentTimeMillis());
+
+        // This message now needs a reference so that it can be referenced by
+        // the state machine handling the message stages. We can also use the
+        // ref to reference to a previous message. This can allow us to enforce
+        // the order of messages
+        this.put("ref", UUID.randomUUID());
     }
 
     /**
@@ -31,17 +37,7 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (String k : this.keySet()) {
-            if(k.equals("battlefield")) {
-                // too long to print
-                sb.append(k + ": <battlefield> , ");
-            } else {
-                sb.append(k + ": " + this.get(k) + ", ");
-            }
-        }
-        sb.setLength(sb.length() - 2);
-        return sb.toString();
+        return "MESSAGE[t: " + this.get("timestamp") + " " + this.get("request") + " " + this.get("ref") +" "+ get("x") + "," + get("y") + "]";
     }
 
     @Override
@@ -50,17 +46,6 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
         long t1 = (long)this.get("timestamp");
         long t2 = (long)o.get("timestamp");
         return (int)(t1 - t2);
-    }
-
-    /**
-     * convenience constructor for creating an ack Message
-     * @param message
-     * @return
-     */
-    public static Message ack(Message message) {
-        Message m = new Message();
-        m.put("request", acknowledge);
-        return m;
     }
 
     public static Message ping() {
@@ -123,11 +108,6 @@ public class Message extends HashMap<String, Object> implements Serializable, Co
 
     public static Message ask(Message m) {
         Message askMsg = Message.toRequestStage(m, RequestStage.ask);
-
-        // This message now needs a reference so that it can be referenced by
-        // the state machine handling the message stages
-        askMsg.put("ref", UUID.randomUUID());
-
         return askMsg;
     }
 

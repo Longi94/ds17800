@@ -1,6 +1,7 @@
 package nl.vu.ds17800.client;
 
 import nl.vu.ds17800.core.networking.Endpoint;
+import nl.vu.ds17800.core.networking.Message;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -23,14 +24,18 @@ public class DasClient {
     public static boolean DEBUG = false;
     private String unitId = null;
 
-    public DasClient(String unitType) {
+    public DasClient(String unitType, int preferredServerPort) {
         Endpoint server;
         ClientController clientController;
         ServerConnection serverConnection;
 
         while(true) {
             // Set up (re-)connection
-            server = ClientController.getServerToConnect(SERVERS);
+            if (preferredServerPort > 0) {
+                server = new Endpoint("localhost", preferredServerPort);
+            } else {
+                server = ClientController.getServerToConnect(SERVERS);
+            }
             if (server == null) {
                 System.out.println("No server available or rather: You're not offline");
                 try {
@@ -63,7 +68,7 @@ public class DasClient {
 
             while (true) {
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(2500);
                 } catch (InterruptedException e) {
                     System.out.println("Sleep interrupted!");
                 }
@@ -78,6 +83,7 @@ public class DasClient {
                 // run next client action
                 try {
                     serverConnection.sendMessage(clientController.getNextMessage());
+                    //serverConnection.sendMessage(Message.nop());
                 } catch (IOException e) {
                     System.out.println("Unable to send message");
                     break;
@@ -91,12 +97,18 @@ public class DasClient {
 
     public static void main(String[] args) {
         if (args.length < 1){
-            System.out.println("Input: <dragon/player> [debug]");
+            System.out.println("Input: <dragon/player> <preferredServer> [debug]");
             return;
         }
 
         String unitType = args[0];
-        DasClient.DEBUG = args.length > 1;
+
+        int preferredServerPort = -1;
+        if (args.length > 1) {
+            preferredServerPort = Integer.parseInt(args[1]);
+        }
+
+        DasClient.DEBUG = args.length > 2;
 
         if(!(unitType.equals("dragon") || unitType.equals("player"))) {
             System.out.println("Wrong unit type!");
@@ -105,6 +117,6 @@ public class DasClient {
         System.out.println("Unit Type: " + unitType);
         System.out.println("Running...");
 
-        new DasClient(unitType);
+        new DasClient(unitType, preferredServerPort);
     }
 }

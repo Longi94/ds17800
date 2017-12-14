@@ -83,11 +83,11 @@ public class DasServer {
         }).start();
 
         while(true) {
-            // flush any outgoing messages
-            serverController.flushOutgoingMessages();
-
             // handle all incoming messages
             serverController.consumeIncomingMessages();
+
+            // flush any outgoing messages
+            serverController.flushOutgoingMessages();
 
             try {
                 Thread.sleep(10);
