@@ -1,4 +1,4 @@
-# fs17800
+# ds17800
 [![Build Status](https://travis-ci.com/Longi94/ds17800.svg?token=q2uGqSPNQRpjpMzytpn6&branch=master)](https://travis-ci.com/Longi94/ds17800)
 
 ## Fault tolerance
@@ -42,4 +42,4 @@
 * (Outgoing) Server, it is my move
   
 
-![arch](https://i.imgur.com/NWXFBIf.jpg)
+![arch](https://raw.githubusercontent.com/Longi94/ds17800/master/das.jpg)
