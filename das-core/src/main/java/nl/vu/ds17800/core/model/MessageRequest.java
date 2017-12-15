@@ -19,6 +19,6 @@ public enum MessageRequest {
     // generic acknowledge message
     acknowledge,
 
-    //list of clients connected to particular server
-    clientListSize
+    ping, //list of clients connected to particular server
+    pong, nop, clientListSize
 }

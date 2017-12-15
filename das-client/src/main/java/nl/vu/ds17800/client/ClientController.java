@@ -2,282 +2,168 @@ package nl.vu.ds17800.client;
 
 import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.MessageRequest;
+import nl.vu.ds17800.core.model.units.Dragon;
 import nl.vu.ds17800.core.model.units.Unit;
-import nl.vu.ds17800.core.networking.CommunicationImpl;
-import nl.vu.ds17800.core.networking.Entities.Message;
-import nl.vu.ds17800.core.networking.Entities.Server;
+import nl.vu.ds17800.core.networking.Endpoint;
+import nl.vu.ds17800.core.networking.Message;
 import nl.vu.ds17800.core.networking.IncomingHandler;
-import nl.vu.ds17800.core.networking.PoolEntity;
+import nl.vu.ds17800.core.networking.IncomingMessage;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static nl.vu.ds17800.core.model.MessageRequest.*;
 
-public class ClientController implements IncomingHandler{
+public class ClientController implements IncomingHandler {
 
-    // structure that keeps servers and amount of connected clients
-    public class ServerDetailsWrapper {
-        public int clientsConnected;
-        public Server server;
+    private Unit unit;
+    private String unitId;
+    private BattleField battleField;
+    private IUnitController unitController;
+    private final PriorityBlockingQueue<Message> incomingMessages;
+    private boolean requestedDisconnect = false;
+
+    public ClientController() {
+        incomingMessages = new PriorityBlockingQueue<>();
+    }
+
+    public String getUnitID() {
+        return unitId;
     }
 
     /**
-     * List of hardcoded servers
+     * get next message to execute from this client
+     * @return Message to be sent to server
      */
-    private Server myServer;
+    public Message getNextMessage() {
+        if(!isSpawned()) {
+            return Message.nop();
+        }
+        return unitController.makeAction();
+    }
 
-    private static final int SND_MSG_TIMEOUT = 2000;
+    @Override
+    public void handleMessage(IncomingMessage inm) {
+        incomingMessages.add(inm.getMessage());
+    }
 
-    private CommunicationImpl communication;
+    public void applyMessage(Message message) {
+        MessageRequest request = (MessageRequest)message.get("request");
 
+        if (battleField == null && request != clientConnect) {
+            System.out.println("Ignoring message, not initialized");
+            return;
+        }
 
-    public ClientController() {
-        this.communication = new CommunicationImpl(this);
+        switch(request) {
+            case clientConnect:
+                battleField = (BattleField) message.get("battlefield");
+                unitId = (String)message.get("id");
+                unit = battleField.findUnitById(unitId);
 
+                // in case we reconnected, we can find our unit on the battlefield
+                if (unit != null) {
+                    // so this is a reconnect, recreate the controller
+                    if (unit instanceof Dragon) {
+                        unitController = new DragonController(battleField, unit);
+                    } else {
+                        unitController = new PlayerController(battleField, unit);
+                    }
+                }
+                // otherwise we expect a spawnUnit message with the unit
+                break;
+            case spawnUnit:
+                Unit u = (Unit)message.get("unit");
+                if (u.getUnitID().equals(unitId)) {
+                    unit = u;
+                    if (unit instanceof Dragon) {
+                        unitController = new DragonController(battleField, unit);
+                    } else {
+                        unitController = new PlayerController(battleField, unit);
+                    }
+                }
+            default:
+                //if message request correspond to battleField actions - pass message to battleField
+                battleField.apply(message);
+        }
     }
 
     /**
      * Ping servers and get the best one
-     * @return server descriptor
+     * @param servers
      */
-    private Server getServerToConnect(int preferredServer) {
+    public static Endpoint getServerToConnect(List<Endpoint> servers) {
 
-        List<Server> servers = communication.getServers();
+        Endpoint result = null;
 
-        if (preferredServer >= 0 && servers.size() > preferredServer) {
-            return servers.get(preferredServer);
-        }
+        long bestPing = Integer.MAX_VALUE;
+
+        // In the case of testing all servers are going to have negligible response time but
+        // the first server in the list to be slower due to caches or similar, we therefore shuffle the list
+        // to get clients somewhat distributed on the servers. In a real-world scenario the shuffling will have no
+        // impact on the results
+        Collections.shuffle(servers);
 
         System.out.println("Pinging servers...");
 
-        // Using TreeMap to have already ordered list of servers (by ping)
-        TreeMap<Long,ServerDetailsWrapper> pingServMap = new TreeMap<Long,ServerDetailsWrapper>();
-
-        // Amount of clients in total
-        int clientsTotal = 0;
-        // Threshold value of clients per server
-        int clientsThreshold = 0;
-
-        for(Server srv : servers) {
+        Message msgPing = Message.ping();
+        Message msgPong = null;
+        for(Endpoint srv : servers) {
             long pingTime;
-            int srvClientListSize;
+            long startPing = System.currentTimeMillis();
 
+            Socket socket = null;
+            ObjectOutputStream output = null;
+            ObjectInputStream input = null;
             try {
-                long startPing = System.currentTimeMillis();
-                boolean serverReachable;
-
-                try (Socket ignored = new Socket(srv.ipaddr, srv.serverPort)) {
-                    serverReachable = true;
-                } catch (IOException ignored) {
-                    serverReachable = false;
-                }
-
-                long endPing = System.currentTimeMillis();
-                if(serverReachable) {
-                    pingTime = endPing - startPing;
-
-                    Message message = new Message();
-                    message.put("request", clientListSize);
-                    Message response = communication.sendMessage(message, srv, SND_MSG_TIMEOUT);
-                    srvClientListSize = (int)response.get("amount");
-
-                    System.out.println("server: " + srv.ipaddr + " | port: " + srv.serverPort + " | ping: " + pingTime + " | connected clients: " + srvClientListSize);
-                    clientsTotal += srvClientListSize;
-                } else {
-                    System.out.println("server: " + srv.ipaddr + " | port: " + srv.serverPort + " | not reachable");
-                    continue;
-                }
-
-
-            } catch (Exception e) {
-                System.out.println("Error while pinging server: " + srv.ipaddr + ", details: " + e.getMessage());
+                socket = new Socket(srv.getKey(), srv.getValue());
+                output = new ObjectOutputStream(socket.getOutputStream());
+                input = new ObjectInputStream(socket.getInputStream());
+                output.writeObject(msgPing);
+                msgPong = (Message)input.readObject();
+            } catch (IOException e) {
                 continue;
-            }
-
-            ServerDetailsWrapper sdw = new ServerDetailsWrapper();
-            sdw.clientsConnected = srvClientListSize;
-            sdw.server = srv;
-
-            pingServMap.put(pingTime, sdw);
-
-        }
-
-        clientsThreshold = (int) Math.ceil( clientsTotal / (float) pingServMap.size());
-
-        if(!pingServMap.isEmpty()) {
-            // choose server by ping (TreeMap) that has less clients connected than clientThreshold value
-            for(ServerDetailsWrapper srvWrapper : pingServMap.values()) {
-                if(srvWrapper.clientsConnected <= clientsThreshold) {
-                    return srvWrapper.server;
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } finally {
+                if(socket != null && !socket.isClosed()) {
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        System.err.println("Cant close connection");
+                        System.exit(-1);
+                    }
                 }
             }
-        }
-        System.out.println("Could not find any server to connect.");
-        return null;
-    }
 
-    /**
-     * Method that connects client to the best server available
-     *
-     * @param unitId - my unitId if I am a reconnecting client
-     * @return - returns message received as a response
-     */
-    private Message connectServer(String unitId, String unitType, int preferredServer) {
-        Message message = new Message();
-        message.put("request", clientConnect);
-        message.put("type", unitType);
-        if(unitId != null) message.put("id", unitId);
+            long endPing = System.currentTimeMillis();
 
-        Server serverToConnect = getServerToConnect(preferredServer);
-
-        Message response;
-        try {
-            System.out.println("Trying to connect server: " + serverToConnect.ipaddr + ", port: " + serverToConnect.serverPort);
-            response = communication.sendMessage(message, serverToConnect, 30000);
-
-            this.myServer = serverToConnect;
-        } catch (Exception e) {
-            System.out.println("Could not connect to server: " + e.getMessage());
-            return null;
-        }
-
-        return response;
-    }
-
-    /**
-     * Method to perform reconnection to other server if current is down or sth
-     * @return success flag
-     */
-    public boolean reconnectServer() {
-        String unitType;
-        if(DasClient.myUnit.getType() == Unit.UnitType.DRAGON) {
-            unitType = "dragon";
-        } else {
-            unitType = "player";
-        }
-
-        Message serverResponse = connectServer(DasClient.myUnit.getUnitID(), unitType, -1);
-        if (serverResponse != null) {
-            System.out.println("MY UNIT ID (received from server): " + serverResponse.get("id"));
-        } else {
-            return false;
-        }
-
-        String myUnitId = DasClient.myUnit.getUnitID();
-
-        //refresh battleField and myUnit to current state received by server
-        DasClient.battleField = (BattleField) serverResponse.get("battlefield");
-        Unit retrievedUnit = DasClient.battleField.findUnitById(myUnitId);
-        if(retrievedUnit == null) {
-            System.out.println("Could not find my unit on battlefield!");
-            return false;
-        }
-        //set current state of my unit after reconnection
-        DasClient.myUnit = retrievedUnit;
-        return true;
-    }
-
-    /**
-     * Function to initialise connection with server.
-     * After successfull connection battleField and player unit are being set
-     * @return succes flag
-     */
-    synchronized public boolean initialiseConnection(String unitType, int preferredServer) {
-        Message serverResponse = connectServer(null, unitType, preferredServer);
-
-        if(serverResponse == null) return false;
-        System.out.println("MY UNIT ID (received from server): " + serverResponse.get("id"));
-        String myUnitId = (String) serverResponse.get("id");
-
-        //refresh battleField and myUnit to current state received by server
-        DasClient.battleField = (BattleField) serverResponse.get("battlefield");
-        DasClient.myUnit = DasClient.battleField.findUnitById(myUnitId);
-        return true;
-    }
-
-    /**
-     * Function sending requests to server
-     * @param actionWrapper - wrapped details of action performed by player
-     * @return success flag
-     */
-    public boolean sendUnitAction(ActionWrapper actionWrapper) {
-
-        MessageRequest request = actionWrapper.actionType;
-        Message message = new Message();
-        switch(request) {
-
-            case dealDamage:
-                message.put("request", dealDamage);
-                message.put("x", actionWrapper.getTargetX());
-                message.put("y", actionWrapper.getTargetY());
-                message.put("damage", actionWrapper.getActionPoints());
-                break;
-
-            case healDamage:
-                message.put("request", healDamage);
-                message.put("x", actionWrapper.getTargetX());
-                message.put("y", actionWrapper.getTargetY());
-                message.put("healed", actionWrapper.getActionPoints());
-                break;
-
-            case moveUnit:
-                message.put("request", moveUnit);
-                message.put("x", actionWrapper.getTargetX());
-                message.put("y", actionWrapper.getTargetY());
-                message.put("unit", actionWrapper.unit);
-                break;
-        }
-
-        try {
-            if (CommunicationImpl.DEBUG_LOG_ENABLED) {
-                System.out.println("Client: sending message...");
+            pingTime = endPing - startPing;
+            if (pingTime < bestPing) {
+                bestPing = pingTime;
+                result = srv;
             }
-            communication.sendMessage(message, myServer, SND_MSG_TIMEOUT);
-        } catch (Exception e) {
-            System.out.println("Could not connect to server: " + e.getMessage());
-            System.out.println("Trying to reconnect...");
-            return reconnectServer(); // return success flag - in that situation current action request is aborted
         }
 
-        return true;
+        return result;
     }
 
+    public boolean isSpawned() {
+        return battleField != null && unitId != null && battleField.findUnitById(unitId) != null;
+    }
 
-    @Override
-    synchronized public Message handleMessage(Message message, PoolEntity connectionEntity) {
-        MessageRequest request = (MessageRequest)message.get("request");
-
-        switch(request) {
-
-            case spawnUnit:
-            case putUnit:
-            case healDamage:
-            case dealDamage:
-            case moveUnit:
-            case removeUnit:
-                //if message request correspond to battleField actions - pass message to battleField
-                DasClient.battleField.apply(message);
-
-                // spectator
-                if (DasClient.myUnit != null && DasClient.myUnit.getHitPoints() <= 0) {
-                    System.out.println("ME | " + DasClient.myUnit);
-                    System.out.println(DasClient.battleField.toString());
-                }
-                break;
-
-            default:
-                System.out.println("Unhandled message request from server");
+    public void applyIncomingMessages() {
+        Message m;
+        while ((m = incomingMessages.poll()) != null) {
+            applyMessage(m);
         }
-
-        return Message.ack(message);
     }
 
-    @Override
-    public void connectionLost(String ipaddr, int port) {
-        //just reconnect
-        reconnectServer();
+    public void printBattleField() {
+        System.out.println(battleField);
     }
 }

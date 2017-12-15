@@ -1,6 +1,7 @@
 package nl.vu.ds17800.core.model;
 
 import nl.vu.ds17800.core.model.units.Unit;
+import nl.vu.ds17800.core.networking.Message;
 
 import java.io.Serializable;
 import java.util.*;
@@ -18,6 +19,9 @@ public class BattleField implements Serializable {
     private Unit[][] map;
 
     private List<Unit> units = Collections.synchronizedList(new ArrayList<Unit>());
+
+    // a vector clock sort of that increments for each update we apply
+    private int updateCount = 0;
 
     /**
      * Initialize the battlefield to the default size
@@ -175,16 +179,12 @@ public class BattleField implements Serializable {
      * @param y position.
      */
     public void removeUnit(int x, int y) {
-
-        synchronized (map) {
-
-            Unit unitToRemove = getUnit(x, y);
-            if (unitToRemove == null) {
-                return; // There was no unit here to remove
-            }
-            map[x][y] = null;
-            unitToRemove.setHitPoints(0);
+        Unit unitToRemove = getUnit(x, y);
+        if (unitToRemove == null) {
+            return; // There was no unit here to remove
         }
+        map[x][y] = null;
+        unitToRemove.setHitPoints(0);
     }
 
     /**
@@ -196,14 +196,20 @@ public class BattleField implements Serializable {
         return UUID.randomUUID().toString();
     }
 
+
+    public int getUpdateCount() {
+        return updateCount;
+    }
+
     /**
      * Apply an action to the game.
      *
      * @param action action
      */
-    public void apply(Map<String, Object> action) {
+    public void apply(Message action) {
         MessageRequest request = (MessageRequest) action.get("request");
         Unit unit;
+        updateCount += 1;
         switch (request) {
             case spawnUnit:
                 spawnUnit((Unit) action.get("unit"), (Integer) action.get("x"), (Integer) action.get("y"));

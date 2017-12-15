@@ -1,63 +1,52 @@
 package nl.vu.ds17800.client;
 
+import nl.vu.ds17800.core.model.BattleField;
 import nl.vu.ds17800.core.model.units.Unit;
+import nl.vu.ds17800.core.networking.Message;
 
 import java.util.List;
 import java.util.Random;
 
-import static nl.vu.ds17800.core.model.MessageRequest.dealDamage;
+public class DragonController implements IUnitController {
 
-public class DragonController implements Runnable {
+    private final BattleField battleField;
+    private final Unit unit;
 
     private Random random = new Random(0L);
+    private boolean gameover = false;
 
-    public DragonController() {}
+    public DragonController(BattleField battleField, Unit unit) {
+        this.unit = unit;
+        this.battleField = battleField;
+    }
 
-    public void run() {
-
-       /* try {
-            Thread.sleep(10000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
-
-        while (true) {
-            try {
-                // Sleep while the dragon is considering its next move (HARDCODED 2000)
-                Thread.sleep(2000L);
-
-                System.out.println("ME | " + DasClient.myUnit);
-                System.out.println(DasClient.battleField.toString());
-
-                // Get current state of my unit
-                Unit myUnit = DasClient.myUnit;
-
-                /* Stop if the dragon runs out of hitpoints */
-                if (myUnit.getHitPoints() <= 0)
-                    break;
-
-                // Pick a random near player to attack
-                List<Unit> nearbyPlayers =  DasClient.battleField.getNearbyPlayers(myUnit.getX(), myUnit.getY(), Unit.UnitType.PLAYER, 2);
-                if (nearbyPlayers.size() == 0)
-                    continue; // There are no players to attack
-                Unit playerToAttack = nearbyPlayers.get((int) (random.nextDouble() * nearbyPlayers.size()));
-
-                // Attack the player
-                ActionWrapper actionWrapper = new ActionWrapper(dealDamage, null, playerToAttack.getX(), playerToAttack.getY(), myUnit.getAttackPoints());
-
-                boolean success = DasClient.clientController.sendUnitAction(actionWrapper);
-
-                if(!success) {
-                    System.out.println("CONNECTION LOST, RECONNECTION FAILED");
-                    break;
-                }
-
-            } catch (Exception e) {
-                System.out.println("IN THREAD ERROR: " + e.getMessage() + " [Stack]:");
-                e.printStackTrace();
-                break;
-            }
+    @Override
+    public Message makeAction() {
+        if (isGameover()) {
+            return Message.nop();
         }
 
+        /* Stop if the dragon runs out of hitpoints */
+        if (unit.getHitPoints() <= 0) {
+            // dragon can disconnect, he is not real and does not need to spectate.
+            gameover = true;
+            return Message.clientDisconnect(this.unit.getUnitID());
+        }
+
+        // Pick a random near player to attack
+        List<Unit> nearbyPlayers = battleField.getNearbyPlayers(unit.getX(), unit.getY(), Unit.UnitType.PLAYER, 2);
+        if (nearbyPlayers.size() == 0) {
+            // still send a dumy message because if we don't talk to server regularily, we will be disconnected
+            return Message.nop();
+        }
+
+        Unit playerToAttack = nearbyPlayers.get((int) (random.nextDouble() * nearbyPlayers.size()));
+
+        // Attack the player
+        return Message.dealDamage(playerToAttack.getX(), playerToAttack.getY(), unit.getAttackPoints());
+    }
+
+    public boolean isGameover() {
+        return gameover;
     }
 }
