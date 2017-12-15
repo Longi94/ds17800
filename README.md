@@ -16,6 +16,12 @@ Servers, dragons and players are run as Java jar files. Run one process for ever
 #### Player
 `java -jar das-client/build/libs/das-client-1.0.0-SNAPSHOT.jar player`
 
+## Report
+* [Final report (PDF)](https://raw.githubusercontent.com/Longi94/ds17800/master/report/distributed-systems-lab_2017-12-15_18-59.pdf
+)
+* [LaTeX source](https://www.overleaf.com/read/vccymnszfjkz)
+
+
 ## Fault tolerance
 * Mirrored servers, no super nodes.
 
