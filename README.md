@@ -1,6 +1,21 @@
 # ds17800
 [![Build Status](https://travis-ci.com/Longi94/ds17800.svg?token=q2uGqSPNQRpjpMzytpn6&branch=master)](https://travis-ci.com/Longi94/ds17800)
 
+## Build
+`./gradlew assemble`
+
+## Run
+Servers, dragons and players are run as Java jar files. Run one process for every server or entity with server/port as parameters.
+
+#### Server
+`java -jar das-server/build/libs/das-server-1.0.0-SNAPSHOT.jar 10100 20100`
+
+#### Dragon
+`java -jar das-client/build/libs/das-client-1.0.0-SNAPSHOT.jar dragon`
+
+#### Player
+`java -jar das-client/build/libs/das-client-1.0.0-SNAPSHOT.jar player`
+
 ## Fault tolerance
 * Mirrored servers, no super nodes.
 

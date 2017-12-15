@@ -12,7 +12,7 @@ trap "kill 0" EXIT
 
 # clean up last run
 mkdir -p logs/
-rm logs/{SERVER,DRAGON,PLAYER}_*.out
+rm -f logs/{SERVER,DRAGON,PLAYER}_*.out
 
 for (( SERVER=0; SERVER<$1; SERVER+=1 )); do
     CPORT=$(( 10100 + $SERVER ))
